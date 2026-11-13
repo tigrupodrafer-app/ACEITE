@@ -6,6 +6,10 @@ on:
       - feat/migracao-supabase-netlify-20261113
     paths:
       - package.json
+      - src/**
+      - netlify/functions/**
+      - vite.config.js
+      - netlify.toml
       - .github/workflows/migration-lock.yml
   workflow_dispatch:
 
@@ -35,5 +39,8 @@ jobs:
           fi
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
+      - name: Verify Netlify Functions syntax
+        run: |
+          find netlify/functions -type f -name '*.cjs' -print0 | xargs -0 -n1 node --check
       - name: Build Vite
         run: npm run build
