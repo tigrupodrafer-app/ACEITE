@@ -1,0 +1,13 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "seller_phone": {
+      "type": "string",
+      "description": "Telefone do vendedor para notifica\u00e7\u00f5es (com DDD)"
+    }
+  },
+  "required": [
+    "seller_phone"
+  ]
+}

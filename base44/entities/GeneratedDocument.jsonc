@@ -1,0 +1,88 @@
+{
+  "name": "GeneratedDocument",
+  "type": "object",
+  "properties": {
+    "order_id": {
+      "type": "string",
+      "description": "ID do pedido vinculado"
+    },
+    "acceptance_id": {
+      "type": "string",
+      "description": "ID do aceite vinculado, quando aplic\u00e1vel"
+    },
+    "document_type": {
+      "type": "string",
+      "enum": [
+        "level1_acceptance",
+        "level2_delivery",
+        "level3_installation",
+        "warranty"
+      ],
+      "description": "Tipo do documento"
+    },
+    "document_title": {
+      "type": "string",
+      "description": "T\u00edtulo do documento"
+    },
+    "file_uri": {
+      "type": "string",
+      "description": "URI do arquivo no armazenamento privado"
+    },
+    "storage_path": {
+      "type": "string",
+      "description": "Caminho interno do armazenamento"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Nome padronizado do arquivo (ex: DRAFER_PED-1023_TERMO_ACEITE_N1.pdf)"
+    },
+    "file_hash": {
+      "type": "string",
+      "description": "Hash SHA-256 do arquivo gerado (integridade)"
+    },
+    "file_size": {
+      "type": "number",
+      "description": "Tamanho do arquivo em bytes"
+    },
+    "generated_at": {
+      "type": "string",
+      "description": "Data/hora da gera\u00e7\u00e3o"
+    },
+    "generated_by": {
+      "type": "string",
+      "description": "Usu\u00e1rio ou sistema que gerou o documento"
+    },
+    "version": {
+      "type": "number",
+      "default": 1,
+      "description": "Vers\u00e3o do documento (regenera\u00e7\u00e3o cria vers\u00e3o nova, sem sobrescrever)"
+    }
+  },
+  "required": [
+    "order_id",
+    "document_type",
+    "file_uri"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

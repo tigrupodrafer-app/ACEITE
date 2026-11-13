@@ -1,0 +1,87 @@
+{
+  "name": "Acceptance",
+  "type": "object",
+  "properties": {
+    "order_id": {
+      "type": "string",
+      "description": "ID do pedido vinculado"
+    },
+    "level": {
+      "type": "number",
+      "description": "N\u00edvel do aceite: 1=Pedido, 2=Entrega, 3=Instala\u00e7\u00e3o"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "realizado",
+        "revogado"
+      ],
+      "default": "pendente",
+      "description": "Situa\u00e7\u00e3o do aceite"
+    },
+    "accepted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Aceite realizado"
+    },
+    "accepted_date": {
+      "type": "string",
+      "description": "Data/hora da assinatura"
+    },
+    "signer_name": {
+      "type": "string",
+      "description": "Nome de quem assinou"
+    },
+    "signer_document": {
+      "type": "string",
+      "description": "CPF/CNPJ de quem assinou"
+    },
+    "signature": {
+      "type": "string",
+      "description": "Assinatura (dataURL ou marca)"
+    },
+    "ip": {
+      "type": "string",
+      "description": "IP de quem assinou"
+    },
+    "device": {
+      "type": "string",
+      "description": "Dispositivo/navegador de quem assinou"
+    },
+    "location": {
+      "type": "string",
+      "description": "Localiza\u00e7\u00e3o aproximada (se autorizada)"
+    },
+    "checklist": {
+      "type": "object",
+      "description": "Checklist respondido no aceite (N2/N3)"
+    }
+  },
+  "required": [
+    "order_id",
+    "level"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

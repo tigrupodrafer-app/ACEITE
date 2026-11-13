@@ -1,0 +1,309 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "order_number": {
+      "type": "string",
+      "description": "N\u00famero do pedido"
+    },
+    "order_image_url": {
+      "type": "string",
+      "description": "URL da imagem do pedido enviada"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "rascunho",
+        "aguardando_aceite_pedido",
+        "em_fabricacao",
+        "aguardando_aceite_entrega",
+        "entregue",
+        "aguardando_aceite_instalacao",
+        "concluido"
+      ],
+      "default": "rascunho",
+      "description": "Status do pedido"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Nome completo / Raz\u00e3o Social"
+    },
+    "client_document": {
+      "type": "string",
+      "description": "CPF ou CNPJ"
+    },
+    "client_phone": {
+      "type": "string",
+      "description": "Telefone"
+    },
+    "client_email": {
+      "type": "string",
+      "description": "E-mail"
+    },
+    "client_address": {
+      "type": "string",
+      "description": "Endere\u00e7o da obra"
+    },
+    "site_responsible": {
+      "type": "string",
+      "description": "Respons\u00e1vel pela obra"
+    },
+    "sale_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da venda"
+    },
+    "seller_name": {
+      "type": "string",
+      "description": "Vendedor respons\u00e1vel"
+    },
+    "seller_phone": {
+      "type": "string",
+      "description": "WhatsApp do vendedor (com DDD)"
+    },
+    "store_name": {
+      "type": "string",
+      "description": "Loja respons\u00e1vel"
+    },
+    "product_code": {
+      "type": "string",
+      "description": "C\u00f3digo do produto (ex: 10633)"
+    },
+    "tile_model": {
+      "type": "string",
+      "description": "Modelo da telha extra\u00eddo do pedido (ex: TR-35)"
+    },
+    "tile_type": {
+      "type": "string",
+      "description": "Tipo/descri\u00e7\u00e3o completa da telha"
+    },
+    "material": {
+      "type": "string",
+      "enum": [
+        "BGL",
+        "Galvalume",
+        "Pre-pintada"
+      ],
+      "description": "Material da telha"
+    },
+    "thickness": {
+      "type": "string",
+      "description": "Espessura"
+    },
+    "length": {
+      "type": "string",
+      "description": "Comprimento"
+    },
+    "quantity": {
+      "type": "number",
+      "description": "Quantidade"
+    },
+    "approx_weight": {
+      "type": "string",
+      "description": "Peso aproximado"
+    },
+    "manufacturing_order_image_url": {
+      "type": "string",
+      "description": "URL da imagem da Ordem de Fabrica\u00e7\u00e3o"
+    },
+    "manufacturing_auth_number": {
+      "type": "string",
+      "description": "N\u00famero da Autoriza\u00e7\u00e3o de Fabrica\u00e7\u00e3o"
+    },
+    "manufacturing_order_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "qtd_pc": {
+            "type": "number"
+          },
+          "comprimento": {
+            "type": "number"
+          },
+          "qtd_metros": {
+            "type": "number"
+          },
+          "modelo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Itens extra\u00eddos da Ordem de Fabrica\u00e7\u00e3o"
+    },
+    "manufacturing_total_pc": {
+      "type": "number",
+      "description": "Total de pe\u00e7as"
+    },
+    "manufacturing_total_metros": {
+      "type": "number",
+      "description": "Total em metros"
+    },
+    "manufacturing_delivery_date": {
+      "type": "string",
+      "description": "Data de entrega da ordem"
+    },
+    "level1_accepted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Aceite N\u00edvel 1 - Pedido"
+    },
+    "level1_date": {
+      "type": "string"
+    },
+    "level1_signature": {
+      "type": "string"
+    },
+    "level1_ip": {
+      "type": "string"
+    },
+    "level1_device": {
+      "type": "string"
+    },
+    "level1_location": {
+      "type": "string"
+    },
+    "level2_accepted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Aceite N\u00edvel 2 - Entrega"
+    },
+    "level2_date": {
+      "type": "string"
+    },
+    "level2_signature": {
+      "type": "string"
+    },
+    "level2_ip": {
+      "type": "string"
+    },
+    "level2_device": {
+      "type": "string"
+    },
+    "level2_location": {
+      "type": "string"
+    },
+    "level2_receiver_name": {
+      "type": "string"
+    },
+    "level2_receiver_document": {
+      "type": "string"
+    },
+    "level2_checklist": {
+      "type": "object"
+    },
+    "level3_accepted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Aceite N\u00edvel 3 - Instala\u00e7\u00e3o"
+    },
+    "level3_date": {
+      "type": "string"
+    },
+    "level3_signature": {
+      "type": "string"
+    },
+    "level3_ip": {
+      "type": "string"
+    },
+    "level3_device": {
+      "type": "string"
+    },
+    "level3_location": {
+      "type": "string"
+    },
+    "level3_unloading_checklist": {
+      "type": "object"
+    },
+    "level3_storage_checklist": {
+      "type": "object"
+    },
+    "level3_installation_checklist": {
+      "type": "object"
+    },
+    "photos_delivery": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "photos_unloading": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "photos_storage": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "photos_installation": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "seller_signature": {
+      "type": "string"
+    },
+    "warranty_blocked": {
+      "type": "boolean",
+      "default": true
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "client_name",
+    "client_document",
+    "client_phone",
+    "material"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
