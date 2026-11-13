@@ -1,46 +1,30 @@
-name: Migration - lockfile and build
+name: DRAFER ACEITE - Migration CI
 
 on:
   push:
     branches:
       - feat/migracao-supabase-netlify-20261113
-    paths:
-      - package.json
-      - src/**
-      - netlify/functions/**
-      - vite.config.js
-      - netlify.toml
-      - .github/workflows/migration-lock.yml
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  lock-and-build:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: true
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Regenerate lockfile from pinned dependencies
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Commit lockfile only to migration branch
-        run: |
-          if ! git diff --quiet -- package-lock.json; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package-lock.json
-            git commit -m "chore: atualizar package-lock com SDK Supabase"
-            git push origin HEAD:feat/migracao-supabase-netlify-20261113
-          fi
-      - name: Install locked dependencies
+          cache: 'npm'
+      - name: Install dependencies from committed lockfile
         run: npm ci --no-audit --no-fund
       - name: Verify Netlify Functions syntax
         run: |
           find netlify/functions -type f -name '*.cjs' -print0 | xargs -0 -n1 node --check
-      - name: Build Vite
+      - name: Build React/Vite
         run: npm run build
