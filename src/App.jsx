@@ -1,87 +1,75 @@
-import { Toaster } from "@/components/ui/toaster"
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClientInstance } from '@/lib/query-client'
-import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { Toaster } from '@/components/ui/toaster';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClientInstance } from '@/lib/query-client';
+import { pagesConfig } from './pages.config';
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import Login from '@/pages/Login';
+import PublicAcceptance from '@/pages/PublicAcceptance';
 
 const { Pages, Layout, mainPage } = pagesConfig;
-const mainPageKey = mainPage ?? Object.keys(Pages)[0];
-const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
+const MainPage = Pages[mainPage] || Object.values(Pages)[0];
 
-const PUBLIC_PAGES = ['AssinarAceite', 'AuthTest'];
+const LayoutWrapper = ({ children, currentPageName }) =>
+  Layout ? <Layout currentPageName={currentPageName}>{children}</Layout> : children;
 
-const LayoutWrapper = ({ children, currentPageName }) => Layout ?
-  <Layout currentPageName={currentPageName}>{children}</Layout>
-  : <>{children}</>;
-
-const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+function ProtectedRoutes() {
+  const { isLoadingAuth, isAuthenticated, authError } = useAuth();
   const location = useLocation();
-  const currentPage = location.pathname.replace(/^\//, '');
 
-  // Show loading spinner while checking app public settings or auth
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  if (isLoadingAuth) {
+    return <div className="min-h-screen flex items-center justify-center text-slate-500">Validando acesso...</div>;
+  }
+  if (authError?.type === 'user_not_registered') return <UserNotRegisteredError />;
+  if (authError?.type === 'configuration_required' || authError?.type === 'unknown') {
     return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      <div role="alert" className="min-h-screen p-10 flex items-center justify-center">
+        <div className="max-w-md p-6 bg-red-50 border border-red-200 rounded-lg text-red-900">
+          {authError.message}
+        </div>
       </div>
     );
   }
+  if (!isAuthenticated) return <Navigate to="/Login" state={{ from: location.pathname }} replace />;
 
-  // Handle authentication errors
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Public pages don't require login — render routes normally
-      if (!PUBLIC_PAGES.includes(currentPage)) {
-        // Redirect to login automatically
-        navigateToLogin();
-        return null;
-      }
-    }
-  }
-
-  // Render the main app
   return (
     <Routes>
-      <Route path="/" element={
-        <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPage />
-        </LayoutWrapper>
-      } />
-      {Object.entries(Pages).map(([path, Page]) => (
-        <Route
-          key={path}
-          path={`/${path}`}
-          element={
-            <LayoutWrapper currentPageName={path}>
-              <Page />
-            </LayoutWrapper>
-          }
-        />
-      ))}
+      <Route path="/" element={<LayoutWrapper currentPageName={mainPage}><MainPage /></LayoutWrapper>} />
+      {Object.entries(Pages)
+        .filter(([name]) => !['AssinarAceite', 'AuthTest'].includes(name))
+        .map(([name, Page]) => (
+          <Route
+            key={name}
+            path={'/' + name}
+            element={<LayoutWrapper currentPageName={name}><Page /></LayoutWrapper>}
+          />
+        ))}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
-};
+}
 
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/Login" element={<Login />} />
+      <Route path="/AssinarAceite" element={<PublicAcceptance />} />
+      <Route path="/*" element={<ProtectedRoutes />} />
+    </Routes>
+  );
+}
 
-function App() {
-
+export default function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
-  )
+  );
 }
-
-export default App
