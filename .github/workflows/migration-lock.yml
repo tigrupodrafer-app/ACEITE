@@ -1,0 +1,30 @@
+name: DRAFER ACEITE - Migration CI
+
+on:
+  push:
+    branches:
+      - feat/migracao-supabase-netlify-20261113
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies from committed lockfile
+        run: npm ci --no-audit --no-fund
+      - name: Verify Netlify Functions syntax
+        run: |
+          find netlify/functions -type f -name '*.cjs' -print0 | xargs -0 -n1 node --check
+      - name: Build React/Vite
+        run: npm run build

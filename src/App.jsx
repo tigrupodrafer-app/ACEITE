@@ -1,87 +1,69 @@
-import { Toaster } from "@/components/ui/toaster"
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClientInstance } from '@/lib/query-client'
-import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
-import PageNotFound from './lib/PageNotFound';
+import { Toaster } from 'sonner';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClientInstance } from '@/lib/query-client';
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import Login from '@/pages/Login';
+import PublicAcceptance from '@/pages/PublicAcceptance';
+import Dashboard from '@/pages/Dashboard';
+import Layout from '@/Layout';
 
-const { Pages, Layout, mainPage } = pagesConfig;
-const mainPageKey = mainPage ?? Object.keys(Pages)[0];
-const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
-
-const PUBLIC_PAGES = ['AssinarAceite', 'AuthTest'];
-
-const LayoutWrapper = ({ children, currentPageName }) => Layout ?
-  <Layout currentPageName={currentPageName}>{children}</Layout>
-  : <>{children}</>;
-
-const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+// Only migrated pages are imported. Legacy Base44 modules do not enter the bundle.
+// Remaining pages will be enabled one at a time after replacing backend calls.
+function PrivatePage({ children }) {
+  const { isLoadingAuth, isAuthenticated, authError } = useAuth();
   const location = useLocation();
-  const currentPage = location.pathname.replace(/^\//, '');
 
-  // Show loading spinner while checking app public settings or auth
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  if (isLoadingAuth) {
+    return <div className="min-h-screen flex items-center justify-center text-slate-500">Validando acesso...</div>;
+  }
+  if (authError?.type === 'user_not_registered') return <UserNotRegisteredError />;
+  if (['configuration_required', 'unknown'].includes(authError?.type)) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      <div role="alert" className="min-h-screen p-10 flex items-center justify-center">
+        <div className="max-w-md p-6 bg-red-50 border border-red-200 rounded-lg text-red-900">
+          {authError.message}
+        </div>
       </div>
     );
   }
+  if (!isAuthenticated) return <Navigate to="/Login" state={{ from: location.pathname }} replace />;
+  return <Layout currentPageName="Dashboard">{children}</Layout>;
+}
 
-  // Handle authentication errors
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Public pages don't require login — render routes normally
-      if (!PUBLIC_PAGES.includes(currentPage)) {
-        // Redirect to login automatically
-        navigateToLogin();
-        return null;
-      }
-    }
-  }
+function MigrationNotice() {
+  return (
+    <PrivatePage>
+      <div className="max-w-xl mx-auto my-16 p-8 bg-amber-50 border border-amber-200 rounded-xl">
+        <h1 className="font-bold text-xl text-amber-900">Módulo em migração</h1>
+        <p className="mt-3 text-amber-900">
+          Esta funcionalidade ainda depende de componentes da versão anterior e ficará indisponível até sua substituição segura.
+        </p>
+      </div>
+    </PrivatePage>
+  );
+}
 
-  // Render the main app
+function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={
-        <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPage />
-        </LayoutWrapper>
-      } />
-      {Object.entries(Pages).map(([path, Page]) => (
-        <Route
-          key={path}
-          path={`/${path}`}
-          element={
-            <LayoutWrapper currentPageName={path}>
-              <Page />
-            </LayoutWrapper>
-          }
-        />
-      ))}
-      <Route path="*" element={<PageNotFound />} />
+      <Route path="/Login" element={<Login />} />
+      <Route path="/AssinarAceite" element={<PublicAcceptance />} />
+      <Route path="/" element={<PrivatePage><Dashboard /></PrivatePage>} />
+      <Route path="/Dashboard" element={<PrivatePage><Dashboard /></PrivatePage>} />
+      <Route path="*" element={<MigrationNotice />} />
     </Routes>
   );
-};
+}
 
-
-function App() {
-
+export default function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
+        <BrowserRouter><AppRoutes /></BrowserRouter>
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
-  )
+  );
 }
-
-export default App
