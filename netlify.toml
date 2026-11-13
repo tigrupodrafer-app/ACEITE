@@ -1,0 +1,13 @@
+# DRAFER ACEITE - React/Vite (publicação futura após migração Base44)
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# React Router: permite abrir rotas diretamente (assinatura pública inclusive).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
