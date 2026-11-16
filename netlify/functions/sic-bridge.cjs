@@ -12,6 +12,18 @@ function authorize(event) {
   if (!configured || configured.length < 32) throw err('Bridge not configured', 503);
   if (typeof supplied !== 'string' || supplied.length !== configured.length ||
       !crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(configured))) {
+    // Short SHA-256 fingerprints of a 256-bit randomly generated secret are
+    // safe to compare in restricted Function logs. Never log either token.
+    // This diagnostic does not change or weaken authorization.
+    const fingerprint = (value) => typeof value === 'string'
+      ? crypto.createHash('sha256').update(value, 'utf8').digest('hex').slice(0, 12)
+      : 'missing';
+    console.warn('[sic-bridge] denied', {
+      configuredLength: configured.length,
+      receivedLength: typeof supplied === 'string' ? supplied.length : 0,
+      configuredFingerprint: fingerprint(configured),
+      receivedFingerprint: fingerprint(supplied),
+    });
     throw err('Acesso negado', 403);
   }
 }
