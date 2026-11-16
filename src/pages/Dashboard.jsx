@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { apiGet } from '@/lib/apiClient';
 import StatsCards from '../components/dashboard/StatsCards.jsx';
 import OrdersTable from '../components/dashboard/OrdersTable.jsx';
+import SicLookup from '@/components/SicLookup';
 
 export default function Dashboard() {
   const { data: orders = [], isLoading, isError, error, refetch, isFetching } = useQuery({
@@ -38,6 +39,7 @@ export default function Dashboard() {
         {isError && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 p-4 rounded mb-5">
           Não foi possível carregar pedidos: {error?.message}
         </div>}
+        <SicLookup />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <StatsCards icon={FileText} title="Pedidos carregados" value={isLoading ? '—' : stats.total} color="text-blue-600" />
           <StatsCards icon={Loader2} title="Em fabricação" value={isLoading ? '—' : stats.fabricacao} color="text-yellow-600" />
