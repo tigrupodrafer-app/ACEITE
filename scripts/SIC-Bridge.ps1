@@ -39,10 +39,19 @@ while ($true) {
         try {
           $url = "$LocalApi/api/pedidos/$number"
           $data = Invoke-RestMethod -Method Get -Uri $url -TimeoutSec 25
-          if ($null -eq $data -or $null -eq $data.pedidoCompleto -or $null -eq $data.itens -or $null -eq $data.validacao) {
+          # Local Node API returns { sucesso, pedido: { ..., itens }, validacao }.
+          # Normalize for Netlify without changing the already working backend.
+          if ($null -eq $data -or $data.sucesso -ne $true -or
+              $null -eq $data.pedido -or $null -eq $data.pedido.itens -or
+              $null -eq $data.validacao) {
             Complete-Job $job $false $null 'INVALID_DATA'
           } else {
-            Complete-Job $job $true $data ''
+            $normalized = @{
+              pedidoCompleto = $data.pedido
+              itens = @($data.pedido.itens)
+              validacao = $data.validacao
+            }
+            Complete-Job $job $true $normalized ''
             Write-Host ("SIC order queried: " + $number)
           }
         } catch {
