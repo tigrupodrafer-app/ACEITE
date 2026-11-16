@@ -26,5 +26,7 @@ jobs:
       - name: Verify Netlify Functions syntax
         run: |
           find netlify/functions -type f -name '*.cjs' -print0 | xargs -0 -n1 node --check
+      - name: Test SIC endpoint security
+        run: node --test tests/*.test.cjs
       - name: Build React/Vite
         run: npm run build
