@@ -6,6 +6,7 @@ import {
 import { apiGet, apiPost, apiDownloadPdf } from '@/lib/apiClient';
 import { Button } from '@/components/ui/button';
 import DocumentReview from '@/components/DocumentReview';
+import FormalApproval from '@/components/FormalApproval';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const labels = {
@@ -407,6 +408,7 @@ export default function SicLookup() {
                     )}
                   </div>
                   {reviewDocument && <DocumentReview draftId={savedDraft.draftId} document={reviewDocument} />}
+                  {reviewDocument && <FormalApproval draftId={savedDraft.draftId} document={reviewDocument} />}
                 </div>
               )}
               <div className="flex flex-wrap gap-3">
