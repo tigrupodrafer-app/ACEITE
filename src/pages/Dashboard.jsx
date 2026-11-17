@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
@@ -32,9 +33,14 @@ export default function Dashboard() {
             <h1 className="text-3xl md:text-4xl font-bold text-slate-900">ACEITE DRAFER</h1>
             <p className="text-slate-600 mt-1">Pedidos jurídicos — Supabase</p>
           </div>
+          <div className="flex flex-wrap gap-2">
+          <Link to="/Apresentacao" className="inline-flex gap-2 items-center rounded-md bg-red-700 hover:bg-red-800 text-white px-4 py-2 text-sm font-semibold">
+            <FileText className="w-4 h-4"/> Apresentar fluxo do aceite
+          </Link>
           <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={isFetching ? 'w-4 h-4 mr-2 animate-spin' : 'w-4 h-4 mr-2'} /> Atualizar
           </Button>
+          </div>
         </div>
         {isError && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 p-4 rounded mb-5">
           Não foi possível carregar pedidos: {error?.message}
