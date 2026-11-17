@@ -59,6 +59,7 @@ export default function SicLookup() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [draftExporting, setDraftExporting] = useState(false);
 
   async function refresh(id) {
     try {
@@ -101,6 +102,17 @@ export default function SicLookup() {
   // Situacao "0" is not interpreted as legally eligible without a confirmed SIC mapping.
   const juridicalApproved = false;
   const canGenerateAcceptance = financialOk && sicReleased && juridicalApproved;
+
+  async function downloadDraft() {
+    if (!pedido || draftExporting) return;
+    setDraftExporting(true);
+    try {
+      const { exportAcceptanceDraft } = await import('@/lib/acceptanceDraftPdf');
+      await exportAcceptanceDraft({ pedido, itens: items, validacao: validation });
+    } catch {
+      setError('Não foi possível gerar a minuta PDF. Tente novamente.');
+    } finally { setDraftExporting(false); }
+  }
 
   async function downloadSnapshot() {
     if (!pedido || exporting) return;
@@ -288,14 +300,19 @@ export default function SicLookup() {
                   {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                   Baixar espelho da consulta (PDF)
                 </Button>
+                <Button type="button" variant="outline" onClick={downloadDraft}
+                  disabled={draftExporting} className="gap-2 bg-white">
+                  {draftExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                  Baixar minuta do termo (PDF)
+                </Button>
                 <Button type="button" disabled={!canGenerateAcceptance} className="gap-2"
-                  title="Pendente de homologação jurídica e implantação do gerador de termos">
+                  title="Pendente de homologação jurídica, regras comerciais e emissão final">
                   <FileText className="h-4 w-4" /> Gerar termo de aceite
                   {!canGenerateAcceptance && <LockKeyhole className="h-4 w-4" />}
                 </Button>
               </div>
               <p className="text-xs text-amber-900">
-                O espelho PDF é apenas para conferência interna: não é termo jurídico nem registra aceite.
+                O espelho e a minuta PDF são apenas para conferência interna. A minuta não pode ser enviada ao cliente nem utilizada para assinatura.
               </p>
             </section>
           </div>
