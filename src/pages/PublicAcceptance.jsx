@@ -29,7 +29,7 @@ export default function PublicAcceptance() {
       <section className="max-w-2xl mx-auto bg-white border shadow-lg rounded-xl p-8">
         <header className="flex gap-3 items-center mb-6">
           <FileText className="text-red-700 w-8 h-8" />
-          <div><h1 className="font-bold text-xl">DRAFER ACEITE</h1>
+          <div><h1 className="font-bold text-xl">ACEITE DRAFER</h1>
             <p className="text-sm text-slate-500">Confirmação de pedido</p></div>
         </header>
         {result.loading && <p className="flex gap-2 items-center"><Loader2 className="animate-spin" /> Consultando...</p>}
