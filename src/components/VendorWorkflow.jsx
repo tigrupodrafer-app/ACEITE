@@ -58,9 +58,9 @@ function PrintedOrder({order,items}){
   <div className="px-2 pt-2 space-y-2 text-[13px] sm:text-[16px]">
    <div className="grid md:grid-cols-3 gap-2"><LabelValue label="Emissão" value={date(order.dataPedido)}/><LabelValue label="Data entrega" value={date(order.dataEntrega)}/><LabelValue label="Vendedor" value={seller}/></div>
    <div className="grid md:grid-cols-2 gap-2"><LabelValue label="Cliente" value={[c.codigo,c.nome].filter(Boolean).join(' — ')}/><LabelValue label="Fone" value={c.telefone||order.telefoneCliente}/></div>
-   <div className="grid md:grid-cols-3 gap-2"><LabelValue label="CNPJ" value={c.cnpj||c.cpf||order.cnpjCpf}/><LabelValue label="Comprador" value={c.comprador||order.comprador}/><LabelValue label="Email" value={c.email||order.emailCliente}/></div>
-   <div className="grid md:grid-cols-4 gap-2"><LabelValue label="Endereço" value={c.endereco||order.endereco}/><LabelValue label="Cidade" value={c.cidade||order.cidade}/><LabelValue label="Estado" value={c.estado||order.estado}/><LabelValue label="Bairro / CEP" value={[c.bairro||order.bairro,c.cep||order.cep].filter(Boolean).join(' / ')}/></div>
-   <div className="grid md:grid-cols-2 gap-2"><LabelValue label="Forma cobrança" value={order.formaCobranca||order.formaPagamento}/><LabelValue label="Cond. Pagto" value={payment}/></div>
+   <div className="grid md:grid-cols-3 gap-2"><LabelValue label="CNPJ" value={c.cnpj||c.cpf||c.cnpjCpf||order.cnpjCpf}/><LabelValue label="Comprador" value={c.comprador||order.comprador}/><LabelValue label="Email" value={c.email||order.emailCliente}/></div>
+   <div className="grid md:grid-cols-4 gap-2"><LabelValue label="Endereço" value={[c.endereco||order.endereco,c.numeroEndereco].filter(Boolean).join(', ')}/><LabelValue label="Cidade" value={c.cidade||order.cidade}/><LabelValue label="Estado" value={c.estado||order.estado}/><LabelValue label="Bairro / CEP" value={[c.bairro||order.bairro,c.cep||order.cep].filter(Boolean).join(' / ')}/></div>
+   <div className="grid md:grid-cols-2 gap-2"><LabelValue label="Forma cobrança" value={order.formaCobranca||order.formaPagamento}/><LabelValue label="Cond. Pagto" value={payment||order.codigoCondicaoPagamentoCadastral}/></div>
    <LabelValue label="Local de Entrega" value={order.localEntrega||order.enderecoEntrega}/>
    <LabelValue label="Obs" value={order.observacoes||order.obs}/>
   </div>
@@ -68,7 +68,7 @@ function PrintedOrder({order,items}){
   <div className="border-t-2 border-black px-2 py-2 grid grid-cols-2 md:grid-cols-6 gap-1 text-[12px] sm:text-sm">
    <span><b>Tot. Qtde:</b> {summary.quantityGroups.length?summary.quantityGroups.map(g=>num(g.quantity,2)+' '+g.unit).join(' + '):'—'}</span>
    <span><b>Tot. Qtde KG:</b> {summary.weightKg===null?'—':num(summary.weightKg)+' KG'}</span>
-   <span><b>Frete:</b> {brl(totals.frete)}</span>
+   <span><b>Frete:</b> {brl(totals.frete??order.frete)}</span>
    <span><b>Itens:</b> {brl(totals.subtotal)}</span>
    <span><b>Desconto:</b> {brl(totals.desconto)}</span>
    <span><b>Total Venda:</b> {brl(totals.total)}</span>
