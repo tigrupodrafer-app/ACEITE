@@ -74,12 +74,12 @@ export async function exportAcceptanceDraft({ pedido, itens, validacao }) {
   paragraph('1. MATERIAIS DO PEDIDO', { size: 12, bold: true });
   itens.forEach((item, i) => {
     paragraph((i + 1) + '. ' + normalize(item.descricao));
-    paragraph('Codigo retornado pela API (a conciliar com SIC): ' + normalize(item.codigoProduto));
+    paragraph('Codigo comercial (cadastro SIC): ' + normalize(item.codigoProdutoComercial));
+    paragraph('Sequencia interna: ' + normalize(item.codigoProdutoInterno ?? item.codigoProduto));
     paragraph('Quantidade retornada pela API: ' + normalize(item.quantidade) +
       ' | Unidade retornada: ' + normalize(item.unidade));
     paragraph('Valor unitario retornado: ' + brl(item.valorUnitario) +
       ' (base de medida a confirmar no SIC) | Total: ' + brl(item.valorTotal));
-    if (item.codigoProdutoSic != null) paragraph('Codigo SIC homologado: ' + normalize(item.codigoProdutoSic));
     if (item.referenciaFornecedor != null) paragraph('Referencia do fornecedor: ' + normalize(item.referenciaFornecedor));
     if (item.pesoLiquidoKg != null) paragraph('Peso liquido (ARQES15.PESO_LIQUIDO): ' + normalize(item.pesoLiquidoKg) + ' kg');
     if (item.pesoBrutoKg != null) paragraph('Peso bruto (ARQES15.PESO_BRUTO): ' + normalize(item.pesoBrutoKg) + ' kg');
@@ -100,8 +100,9 @@ export async function exportAcceptanceDraft({ pedido, itens, validacao }) {
   paragraph('2.5 O aceite juridico somente podera ocorrer apos o documento final aprovado ser exibido integralmente ao cliente e a plataforma registrar sua manifestacao de vontade e evidencias de integridade.');
 
   paragraph('3. CHECKLIST DE HOMOLOGACAO - PENDENCIAS', { size: 12, bold: true });
-  paragraph('[ ] Conciliar codigo do produto 1379 da API com codigo 3847 visualizado no SIC para o pedido de teste; nao presumir equivalencia.');
-  paragraph('[ ] Confirmar os campos de quantidade KG, quantidade de pecas e base do valor unitario (KG ou outra unidade).');
+  paragraph('[ ] Confirmar regras de codigos alternativos do campo de pesquisa do SIC quando necessario; priorizar o codigo comercial do cadastro.');
+  paragraph('[x] Identificados no SIC os campos PESO_LIQUIDO, QTDE_PC e VUNIT_PC.');
+  paragraph('[ ] Homologar regra de unidade comercial e conversoes por familia de produto.');
   paragraph('[ ] Confirmar correspondencia do codigo SITU no SIC com o fluxo comercial.');
   paragraph('[ ] Confirmar documentos e identificacao da empresa emitente.');
   paragraph('[ ] Aprovar juridicamente o teor integral do termo de garantia.');
