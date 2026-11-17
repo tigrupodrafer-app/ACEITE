@@ -27,3 +27,35 @@ async function apiRequest(path, method, body) {
 
 export function apiGet(path) { return apiRequest(path, 'GET'); }
 export function apiPost(path, body) { return apiRequest(path, 'POST', body); }
+
+
+// Download privado sem expor o JWT na URL. Endpoint autorizado no mesmo dominio.
+export async function apiDownloadPdf(path, filename) {
+  if (!/^\/\.netlify\/functions\/review-document\?draftId=[a-f0-9-]{36}&download=1$/i.test(path)) {
+    throw new Error('Caminho de download nao permitido');
+  }
+  if (!supabase) throw new Error('Supabase nao configurado.');
+  const { data, error } = await supabase.auth.getSession();
+  if (error || !data?.session?.access_token) throw new Error('Sessao expirada.');
+  const res = await fetch(path, {
+    headers: { Authorization: 'Bearer ' + data.session.access_token },
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const msg = await res.json().catch(() => ({}));
+    throw new Error(msg.error || 'Nao foi possivel baixar o PDF.');
+  }
+  const blob = await res.blob();
+  if (blob.type !== 'application/pdf' || blob.size < 100) throw new Error('Arquivo PDF invalido.');
+  const url = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }
+}
