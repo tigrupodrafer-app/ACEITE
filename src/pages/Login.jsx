@@ -13,7 +13,7 @@ const PILOT_EMAILS = new Set([
 const normalizeEmail = value => String(value || '').trim().toLowerCase();
 
 export default function Login() {
-  const { isAuthenticated, isLoadingAuth, checkAppState } = useAuth();
+  const { isAuthenticated, isLoadingAuth } = useAuth();
   const [working, setWorking] = useState(false);
   const [email, setEmail] = useState('');
   const [sentTo, setSentTo] = useState('');
@@ -80,14 +80,24 @@ export default function Login() {
     }
     setWorking(true);
     try {
-      const { error: verifyError } = await supabase.auth.verifyOtp({
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
         email: sentTo, token: code.trim(), type: 'email',
       });
       if (verifyError) throw verifyError;
-      await checkAppState();
-      setSuccess('Código validado. Conferindo autorização de acesso...');
-    } catch {
-      setError('Código inválido ou expirado. Confira o e-mail recebido e tente novamente.');
+      if (!data?.session?.access_token) {
+        throw new Error('Sessão não estabelecida após validar o código.');
+      }
+
+      // OTPs são de uso único. Não tente verificá-lo novamente:
+      // redirecione usando a sessão já persistida pelo SDK, em vez
+      // de depender de uma atualização assíncrona de contexto React.
+      window.location.replace('/Dashboard');
+      return;
+    } catch (err) {
+      setError(err?.message === 'Sessão não estabelecida após validar o código.'
+        ? 'Código aceito, mas não foi possível iniciar a sessão. Solicite outro código.'
+        : 'Código inválido ou expirado. Solicite um novo código e tente novamente uma única vez.');
+      setCode('');
     } finally {
       setWorking(false);
     }
