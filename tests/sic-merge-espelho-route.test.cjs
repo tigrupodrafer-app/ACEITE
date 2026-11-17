@@ -3,7 +3,13 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-const {mergePedidoEspelho}=require('../server-patches/espelhoMerge.js');
+const Module=require('node:module');
+const modulePath=path.join(__dirname,'../server-patches/espelhoMerge.js');
+const wrapped=new Module(modulePath,module);
+wrapped.filename=modulePath;
+wrapped.paths=module.paths;
+wrapped._compile(fs.readFileSync(modulePath,'utf8'),modulePath);
+const {mergePedidoEspelho}=wrapped.exports;
 const script=fs.readFileSync(path.join(__dirname,'../scripts/Integrar-Espelho-Pedidos-Notepad.ps1'),'utf8');
 test('merge preserva dados validos e filtra nulos',()=>{
  const pedido={numero:352488,empresa:1,cliente:{codigo:1177,nome:'Nome antigo',telefone:'(00) 1234',email:'atual@example.org'},valores:{total:240.05}};
