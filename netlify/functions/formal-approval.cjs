@@ -46,8 +46,8 @@ function summarize(doc,rows) {
 exports.handler=async(event)=>{
   try{
     if(!['GET','POST'].includes(event.httpMethod))throw invalid('Metodo nao permitido',405);
-    const {authUser,member}=await requireStaff(event);
-    if(member.role!=='admin')throw invalid('Acesso restrito a administradores',403);
+    const {authUser,member}=await requireStaff(event, { allowedRoles: ['admin', 'aprovador'] });
+    if(!['admin','aprovador'].includes(member.role))throw invalid('Acesso restrito a aprovadores',403);
     let input={};
     if(event.httpMethod==='POST') {
       if((event.body||'').length>4200)throw invalid('Formulario muito grande',400);
