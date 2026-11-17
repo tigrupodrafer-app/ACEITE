@@ -8,11 +8,12 @@ import Login from '@/pages/Login';
 import PublicAcceptance from '@/pages/PublicAcceptance';
 import Dashboard from '@/pages/Dashboard';
 import Layout from '@/Layout';
+import ApproverHome from '@/pages/ApproverHome';
 
 // Only migrated pages are imported. Legacy Base44 modules do not enter the bundle.
 // Remaining pages will be enabled one at a time after replacing backend calls.
 function PrivatePage({ children }) {
-  const { isLoadingAuth, isAuthenticated, authError } = useAuth();
+  const { isLoadingAuth, isAuthenticated, authError, user } = useAuth();
   const location = useLocation();
 
   if (isLoadingAuth) {
@@ -29,6 +30,7 @@ function PrivatePage({ children }) {
     );
   }
   if (!isAuthenticated) return <Navigate to="/Login" state={{ from: location.pathname }} replace />;
+  if (user?.role === 'aprovador') return <ApproverHome />;
   return <Layout currentPageName="Dashboard">{children}</Layout>;
 }
 
