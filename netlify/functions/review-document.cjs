@@ -67,7 +67,7 @@ function pdfForReview(order, version) {
     y += opts.after ?? 2.5;
   }
   header();
-  p('DRAFER ACEITE - DOCUMENTO DE REVISAO DO PEDIDO', { size: 14, bold: true });
+  p('ACEITE DRAFER - DOCUMENTO DE REVISAO DO PEDIDO', { size: 14, bold: true });
   p('Versao documental: ' + version + ' | Documento nao aprovado juridicamente.', { bold: true });
   p('Esta copia e exclusivamente para conferencia administrativa. Nao e aceite, contrato assinado nem autorizacao de fabricacao.');
   p('Pedido: ' + order.order_number + ' | Empresa SIC: ' + order.sic_company_id, { bold: true });
