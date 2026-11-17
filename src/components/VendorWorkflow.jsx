@@ -100,6 +100,8 @@ export default function VendorWorkflow(){
  const [request,setRequest]=useState(null);
  const [order,setOrder]=useState(null);
  const [term,setTerm]=useState(null);
+ const [termLoading,setTermLoading]=useState(true);
+ const [termError,setTermError]=useState('');
  const [status,setStatus]=useState(null);
  const [working,setWorking]=useState(false);
  const [error,setError]=useState('');
@@ -109,7 +111,15 @@ export default function VendorWorkflow(){
  const startedAt=useRef(0);
  const querySequence=useRef(0);
  const pollingBusy=useRef(false);
- useEffect(()=>{apiGet('/.netlify/functions/vendor-legal-preview').then(setTerm).catch(()=>setTerm(null));},[]);
+ useEffect(()=>{
+  let active=true;
+  apiGet('/.netlify/functions/vendor-legal-preview').then(data=>{
+   if(active){setTerm(data);setTermError('');}
+  }).catch(()=>{
+   if(active){setTerm(null);setTermError('Não foi possível carregar o texto do termo. Confira sua conexão e atualize a página.');}
+  }).finally(()=>{if(active)setTermLoading(false);});
+  return()=>{active=false;};
+ },[]);
  useEffect(()=>{
   if(!loadingPhase||loadingPhase==='erro')return;
   const timer=window.setInterval(()=>setElapsed(Math.floor((Date.now()-startedAt.current)/1000)),1000);
@@ -250,6 +260,11 @@ export default function VendorWorkflow(){
      </div>
     </div>
    </div>
+   {termLoading&&<div role="status" className="bg-white rounded-lg border p-6 flex gap-3 items-center text-slate-700 print:hidden">
+    <Loader2 className="w-6 h-6 animate-spin text-red-700" aria-hidden="true"/>
+    <span>Carregando cláusulas e anexos do termo de aceite...</span>
+   </div>}
+   {!termLoading&&termError&&<p role="alert" className="border border-red-200 bg-red-50 text-red-800 rounded-lg p-4 print:hidden">{termError}</p>}
    {term&&<Term term={term}/>}
   </>}
  </section>;
