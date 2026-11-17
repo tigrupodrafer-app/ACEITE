@@ -3,7 +3,7 @@ import {
   Loader2, Search, AlertTriangle, CheckCircle2, FileText,
   ShieldCheck, LockKeyhole, Download, Package, UserRound, ClipboardList,
 } from 'lucide-react';
-import { apiGet, apiPost } from '@/lib/apiClient';
+import { apiGet, apiPost, apiDownloadPdf } from '@/lib/apiClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -62,6 +62,9 @@ export default function SicLookup() {
   const [draftExporting, setDraftExporting] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [savedDraft, setSavedDraft] = useState(null);
+  const [reviewDocument, setReviewDocument] = useState(null);
+  const [preparingReview, setPreparingReview] = useState(false);
+  const [downloadingReview, setDownloadingReview] = useState(false);
 
   async function refresh(id) {
     try {
@@ -81,6 +84,7 @@ export default function SicLookup() {
     setError('');
     setState(null);
     setSavedDraft(null);
+    setReviewDocument(null);
     setRequestId('');
     if (!/^[1-9]\d{0,11}$/.test(orderNumber)) {
       setError('Informe apenas um número de pedido válido.');
@@ -117,6 +121,36 @@ export default function SicLookup() {
       setError(e.message || 'Falha ao registrar rascunho interno.');
     } finally {
       setSavingDraft(false);
+    }
+  }
+
+  async function prepareReviewDocument() {
+    if (!savedDraft?.draftId || preparingReview) return;
+    setPreparingReview(true);
+    setError('');
+    try {
+      const doc = await apiPost('/.netlify/functions/review-document', { draftId: savedDraft.draftId });
+      setReviewDocument(doc);
+    } catch (e) {
+      setError(e.message || 'Falha na preparação do documento de revisão.');
+    } finally {
+      setPreparingReview(false);
+    }
+  }
+
+  async function downloadReviewDocument() {
+    if (!savedDraft?.draftId || !reviewDocument || downloadingReview) return;
+    setDownloadingReview(true);
+    setError('');
+    try {
+      await apiDownloadPdf(
+        '/.netlify/functions/review-document?draftId=' + encodeURIComponent(savedDraft.draftId) + '&download=1',
+        'minuta-revisao-' + String(pedido?.numero ?? '').replace(/\\D/g, '') + '-v' + reviewDocument.version + '.pdf'
+      );
+    } catch (e) {
+      setError(e.message || 'Não foi possível baixar o documento arquivado.');
+    } finally {
+      setDownloadingReview(false);
     }
   }
 
@@ -334,6 +368,36 @@ export default function SicLookup() {
                 <div role="status" className="border border-emerald-200 bg-emerald-50 p-3 rounded-md text-sm text-emerald-900">
                   <strong>Rascunho interno:</strong> {savedDraft.message}
                   <p className="mt-1 text-xs">Identificação: {savedDraft.draftId} · Status: {savedDraft.status}</p>
+                </div>
+              )}
+              {savedDraft && (
+                <div className="rounded-md border border-slate-200 bg-white p-4 space-y-3">
+                  <p className="font-semibold text-slate-900">Documento preliminar versionado</p>
+                  <p className="text-sm text-slate-600">
+                    A cópia arquivada será gerada no servidor e guardada em área privada, com SHA-256
+                    para conferência de integridade. Não é um termo aprovado nem pode ser assinada.
+                  </p>
+                  {reviewDocument && (
+                    <div className="text-xs text-slate-700 break-all" role="status">
+                      <p><strong>Versão:</strong> {reviewDocument.version}</p>
+                      <p><strong>SHA-256:</strong> {reviewDocument.sha256}</p>
+                      <p><strong>Situação:</strong> somente revisão interna</p>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" disabled={preparingReview || !!reviewDocument}
+                      onClick={prepareReviewDocument} className="gap-2">
+                      {preparingReview ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                      {reviewDocument ? 'PDF de revisão arquivado' : 'Gerar PDF versionado para revisão'}
+                    </Button>
+                    {reviewDocument && (
+                      <Button type="button" variant="outline" disabled={downloadingReview}
+                        onClick={downloadReviewDocument} className="gap-2">
+                        {downloadingReview ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                        Baixar PDF arquivado
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
               <div className="flex flex-wrap gap-3">
