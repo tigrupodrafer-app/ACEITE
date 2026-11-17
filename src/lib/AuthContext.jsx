@@ -24,7 +24,7 @@ export function AuthProvider({ children }) {
       if (!data?.session?.access_token) {
         setUser(null);
         setIsAuthenticated(false);
-        setAuthError({ type: 'auth_required', message: 'Entre com sua conta Google.' });
+        setAuthError({ type: 'auth_required', message: 'Entre com Google ou com seu e-mail institucional autorizado.' });
         return;
       }
 
@@ -72,7 +72,7 @@ export function AuthProvider({ children }) {
     if (supabase) await supabase.auth.signOut();
     setUser(null);
     setIsAuthenticated(false);
-    setAuthError({ type: 'auth_required', message: 'Entre com sua conta Google.' });
+    setAuthError({ type: 'auth_required', message: 'Entre com Google ou com seu e-mail institucional autorizado.' });
   }, []);
 
   const navigateToLogin = () => {
