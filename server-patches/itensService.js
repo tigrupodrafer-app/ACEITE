@@ -22,7 +22,7 @@ function buscarItensPedido(numeroPedido) {
         '  I.PESO_BRUTO AS PESO_BRUTO_KG,',
         '  I.QTDE_PC AS QUANTIDADE_PECAS,',
         '  I.VUNIT_PC AS VALOR_UNITARIO_PECA,',
-        '  I.PESO_PC AS PESO_PECA'
+        '  I.PESO_PC AS PESO_PECA',
         'FROM ARQES15 I',
         'WHERE I.PEDIDO = ?',
         'ORDER BY I.ITEM',
