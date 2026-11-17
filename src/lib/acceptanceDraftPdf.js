@@ -22,6 +22,16 @@ export async function exportAcceptanceDraft({ pedido, itens, validacao }) {
     ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v))
     : 'Nao informado';
 
+  function datePt(value) {
+    if (!value) return 'Nao informada';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return normalize(value);
+    return new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit', month: '2-digit', year: 'numeric',
+    }).format(date);
+  }
+
   function pageHeader() {
     doc.setTextColor(160, 0, 0);
     doc.setFont('helvetica', 'bold');
@@ -58,14 +68,21 @@ export async function exportAcceptanceDraft({ pedido, itens, validacao }) {
   paragraph('Cliente: ' + normalize(pedido.cliente?.nome));
   paragraph('Codigo do cliente: ' + normalize(pedido.cliente?.codigo));
   paragraph('Situacao original SIC: ' + normalize(pedido.situacao) + ' | Liberado: ' + normalize(pedido.liberado));
-  paragraph('Data do pedido: ' + normalize(pedido.dataPedido));
+  paragraph('Data do pedido: ' + datePt(pedido.dataPedido));
+  paragraph('Previsao de entrega: ' + datePt(pedido.dataEntrega));
 
   paragraph('1. MATERIAIS DO PEDIDO', { size: 12, bold: true });
   itens.forEach((item, i) => {
-    paragraph((i + 1) + '. ' + normalize(item.descricao) + ' | Codigo: ' +
-      normalize(item.codigoProduto) + ' | Quantidade: ' +
-      normalize(item.quantidade) + ' ' + normalize(item.unidade) +
-      ' | Unitario: ' + brl(item.valorUnitario) + ' | Total: ' + brl(item.valorTotal));
+    paragraph((i + 1) + '. ' + normalize(item.descricao));
+    paragraph('Codigo retornado pela API (a conciliar com SIC): ' + normalize(item.codigoProduto));
+    paragraph('Quantidade retornada pela API: ' + normalize(item.quantidade) +
+      ' | Unidade retornada: ' + normalize(item.unidade));
+    paragraph('Valor unitario retornado: ' + brl(item.valorUnitario) +
+      ' (base de medida a confirmar no SIC) | Total: ' + brl(item.valorTotal));
+    if (item.codigoProdutoSic != null) paragraph('Codigo SIC homologado: ' + normalize(item.codigoProdutoSic));
+    if (item.referenciaFornecedor != null) paragraph('Referencia do fornecedor: ' + normalize(item.referenciaFornecedor));
+    if (item.quantidadeKg != null) paragraph('Quantidade em KG (campo mapeado): ' + normalize(item.quantidadeKg));
+    if (item.quantidadePecas != null) paragraph('Quantidade de pecas (campo mapeado): ' + normalize(item.quantidadePecas));
   });
   paragraph('Subtotal: ' + brl(pedido.valores?.subtotal));
   paragraph('Desconto: ' + brl(pedido.valores?.desconto));
@@ -81,6 +98,8 @@ export async function exportAcceptanceDraft({ pedido, itens, validacao }) {
   paragraph('2.5 O aceite juridico somente podera ocorrer apos o documento final aprovado ser exibido integralmente ao cliente e a plataforma registrar sua manifestacao de vontade e evidencias de integridade.');
 
   paragraph('3. CHECKLIST DE HOMOLOGACAO - PENDENCIAS', { size: 12, bold: true });
+  paragraph('[ ] Conciliar codigo do produto 1379 da API com codigo 3847 visualizado no SIC para o pedido de teste; nao presumir equivalencia.');
+  paragraph('[ ] Confirmar os campos de quantidade KG, quantidade de pecas e base do valor unitario (KG ou outra unidade).');
   paragraph('[ ] Confirmar correspondencia do codigo SITU no SIC com o fluxo comercial.');
   paragraph('[ ] Confirmar documentos e identificacao da empresa emitente.');
   paragraph('[ ] Aprovar juridicamente o teor integral do termo de garantia.');
