@@ -29,7 +29,7 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 flex flex-wrap gap-4 justify-between items-center">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900">DRAFER ACEITE</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900">ACEITE DRAFER</h1>
             <p className="text-slate-600 mt-1">Pedidos jurídicos — Supabase</p>
           </div>
           <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
