@@ -29,12 +29,13 @@ export default function FormalApproval({draftId,document}) {
   },[draftId,document?.documentId]);
   async function send(e){
     e.preventDefault();
-    if(busy||!scope||!confirmed)return;
+    const choice=available.includes(scope)?scope:available[0];
+    if(busy||!choice||!confirmed)return;
     setBusy(true);setError('');setNotice('');
     try{
       const res=await apiPost('/.netlify/functions/formal-approval',{
         draftId,documentId:document.documentId,documentSha256:document.sha256,
-        scope,decision,justification,declarationAccepted:true,
+        scope:choice,decision,justification,declarationAccepted:true,
       });
       setNotice(res.message);
       const next=await apiGet('/.netlify/functions/formal-approval?draftId='+encodeURIComponent(draftId));
