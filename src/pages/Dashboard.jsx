@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { apiGet } from '@/lib/apiClient';
 import StatsCards from '../components/dashboard/StatsCards.jsx';
 import OrdersTable from '../components/dashboard/OrdersTable.jsx';
-import SicLookup from '@/components/SicLookup';
+import VendorWorkflow from '@/components/VendorWorkflow';
 
 export default function Dashboard() {
   const { data: orders = [], isLoading, isError, error, refetch, isFetching } = useQuery({
@@ -31,7 +31,7 @@ export default function Dashboard() {
         <div className="mb-8 flex flex-wrap gap-4 justify-between items-center">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-slate-900">ACEITE DRAFER</h1>
-            <p className="text-slate-600 mt-1">Pedidos jurídicos — Supabase</p>
+            <p className="text-slate-600 mt-1">Consulta de pedidos e emissão de aceites — SIC SupraSYS</p>
           </div>
           <div className="flex flex-wrap gap-2">
           <Link to="/Apresentacao" className="inline-flex gap-2 items-center rounded-md bg-red-700 hover:bg-red-800 text-white px-4 py-2 text-sm font-semibold">
@@ -48,7 +48,7 @@ export default function Dashboard() {
         {isError && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 p-4 rounded mb-5">
           Não foi possível carregar pedidos: {error?.message}
         </div>}
-        <SicLookup />
+        <VendorWorkflow />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <StatsCards icon={FileText} title="Pedidos carregados" value={isLoading ? '—' : stats.total} color="text-blue-600" />
           <StatsCards icon={Loader2} title="Em fabricação" value={isLoading ? '—' : stats.fabricacao} color="text-yellow-600" />
