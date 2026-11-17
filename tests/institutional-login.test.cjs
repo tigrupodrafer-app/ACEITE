@@ -21,3 +21,9 @@ test('OTP is verified through Supabase and Google remains available',()=>{
 test('institutional login never uses service key in the client',()=>{
   assert.doesNotMatch(login,/SUPABASE_SERVICE_ROLE_KEY|auth\.admin\.createUser|signUp\(/);
 });
+
+test('OTP success requires session and redirects to protected route without using code twice',()=>{
+  assert.match(login,/if \(!data\?\.session\?\.access_token\)/);
+  assert.match(login,/window\.location\.replace\('\/Dashboard'\)/);
+  assert.doesNotMatch(login,/await checkAppState\(\)/);
+});
