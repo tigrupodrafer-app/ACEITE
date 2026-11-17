@@ -11,7 +11,7 @@ function response(data, code = 200) {
 const payload = {
   id: reqId, order_number: 352488, finished_at: new Date().toISOString(),
   result: {
-    pedidoCompleto: { numero: 352488, empresa: 1, cliente: { nome: 'Cliente Exemplo' },
+    pedidoCompleto: { numero: 352488, empresa: 1, liberado: 'S', cliente: { nome: 'Cliente Exemplo' },
       valores: { total: 240.05 } },
     itens: [{ item: 2, descricao: 'Corte galvanizado', codigoProdutoInterno: 1379,
       codigoProdutoComercial: 2506, valorTotal: 240.05, quantidade: 16.555 }],
