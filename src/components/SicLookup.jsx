@@ -148,7 +148,9 @@ export default function SicLookup() {
       line('ITENS (' + items.length + ')', 12, 'bold');
       items.forEach((item, index) => {
         line((index + 1) + '. ' + safeForExport(item.descricao || 'Produto'));
-        line('Codigo retornado pela API (conciliacao SIC pendente): ' + safeForExport(item.codigoProduto));
+        line('Codigo comercial SIC: ' + safeForExport(item.codigoProdutoComercial ?? 'nao informado') +
+          ' | Seq. interna: ' + safeForExport(item.codigoProdutoInterno ?? item.codigoProduto));
+        if (item.referenciaFornecedor != null) line('Referencia fornecedor: ' + safeForExport(item.referenciaFornecedor));
         line('Qtd API: ' + quantity(item.quantidade) + ' ' + safeForExport(item.unidade) +
           ' | Unitario API (base a confirmar): ' + money(item.valorUnitario) +
           ' | Total: ' + money(item.valorTotal));
@@ -266,24 +268,23 @@ export default function SicLookup() {
                 <Package className="h-4 w-4" />
                 <h4 className="font-semibold">Itens do pedido ({items.length})</h4>
               </div>
-              <p className="px-4 py-3 text-xs text-amber-900 bg-amber-50 border-b border-amber-200">
-                Código, quantidade e valores unitários exibidos conforme a API SIC atual.
-                {String(pedido.numero) === '352488' && String(items[0]?.codigoProduto) === '1379'
-                  ? ' Neste pedido, a tela do SIC apresenta código 3847 enquanto a API retorna 1379.'
-                  : ''}
-                {' '}A correspondência dos campos e a base do valor unitário ainda precisam ser confirmadas.
-                Peso em KG e quantidade de peças não são inferidos a partir da unidade MTD.
+              <p className="px-4 py-3 text-xs text-slate-700 bg-slate-50 border-b">
+                Código comercial e referência obtidos de CAD_PRODUTO quando disponíveis; código interno
+                permanece registrado para rastreabilidade. Peso e peças são campos distintos do SIC.
+                A regra jurídica de elegibilidade continua pendente.
               </p>
               <div className="w-full overflow-x-auto">
                 <table className="w-full min-w-[740px] text-sm">
                   <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
-                    <tr><th className="p-3">Item</th><th className="p-3">Código API*</th><th className="p-3">Descrição</th><th className="p-3 text-right">Qtd. API*</th><th className="p-3">Un.</th><th className="p-3 text-right">Unitário API*</th><th className="p-3 text-right">Peso líquido (kg)</th><th className="p-3 text-right">Peças</th><th className="p-3 text-right">Unitário/peça</th><th className="p-3 text-right">Total</th></tr>
+                    <tr><th className="p-3">Item</th><th className="p-3">Código comercial</th><th className="p-3">Seq. interna</th><th className="p-3">Ref. fornecedor</th><th className="p-3">Descrição</th><th className="p-3 text-right">Qtd. base</th><th className="p-3">Un.</th><th className="p-3 text-right">Unitário base</th><th className="p-3 text-right">Peso líquido (kg)</th><th className="p-3 text-right">Peças</th><th className="p-3 text-right">Unitário/peça</th><th className="p-3 text-right">Total</th></tr>
                   </thead>
                   <tbody className="divide-y">
                     {items.map((item, index) => (
                       <tr key={index}>
                         <td className="p-3">{item.item ?? index + 1}</td>
-                        <td className="p-3">{item.codigoProduto ?? '—'}</td>
+                        <td className="p-3 font-semibold">{item.codigoProdutoComercial ?? '—'}</td>
+                        <td className="p-3">{item.codigoProdutoInterno ?? item.codigoProduto ?? '—'}</td>
+                        <td className="p-3">{item.referenciaFornecedor ?? '—'}</td>
                         <td className="p-3 font-medium">{item.descricao || '—'}</td>
                         <td className="p-3 text-right">{quantity(item.quantidade)}</td>
                         <td className="p-3">{item.unidade || '—'}</td>
