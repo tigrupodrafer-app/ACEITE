@@ -56,7 +56,10 @@ exports.handler=async(event)=>{
     if(!UUID.test(input.draftId||''))throw invalid('Pedido invalido',400);
     const o=await getOrder(input.draftId);
     const d=await latestDoc(o.id);
-    const [current, scopes]=await Promise.all([decisions(o.id),authority(authUser.id,o.sic_company_id)]);
+    const scopes=await authority(authUser.id,o.sic_company_id);
+    if(member.role==='aprovador'&&!scopes.length)
+      throw invalid('Acesso nao autorizado para esta empresa',403);
+    const current=await decisions(o.id);
     if(event.httpMethod==='GET'){
       return respond(200,{
         document:{id:d.id,version:d.version,sha256:d.file_sha256.trim()},
