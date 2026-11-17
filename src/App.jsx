@@ -10,6 +10,8 @@ import Dashboard from '@/pages/Dashboard';
 import Layout from '@/Layout';
 import ApproverHome from '@/pages/ApproverHome';
 import AcceptancePresentation from '@/pages/AcceptancePresentation';
+import DemoLab from '@/pages/DemoLab';
+import DemoSign from '@/pages/DemoSign';
 
 // Only migrated pages are imported. Legacy Base44 modules do not enter the bundle.
 // Remaining pages will be enabled one at a time after replacing backend calls.
@@ -43,6 +45,14 @@ function AdminPresentation() {
   return <AcceptancePresentation/>;
 }
 
+function AdminDemoLab() {
+  const {isLoadingAuth,isAuthenticated,user}=useAuth();
+  if(isLoadingAuth) return <div className="min-h-screen flex items-center justify-center">Validando acesso...</div>;
+  if(!isAuthenticated) return <Navigate to="/Login" replace/>;
+  if(user?.role!=='admin') return <div role="alert" className="p-10 text-red-800">Laboratório disponível apenas para administradores TI.</div>;
+  return <DemoLab/>;
+}
+
 function MigrationNotice() {
   return (
     <PrivatePage>
@@ -62,6 +72,8 @@ function AppRoutes() {
       <Route path="/Login" element={<Login />} />
       <Route path="/AssinarAceite" element={<PublicAcceptance />} />
       <Route path="/Apresentacao" element={<AdminPresentation />} />
+      <Route path="/Laboratorio" element={<AdminDemoLab />} />
+      <Route path="/AssinarDemo" element={<DemoSign />} />
       <Route path="/" element={<PrivatePage><Dashboard /></PrivatePage>} />
       <Route path="/Dashboard" element={<PrivatePage><Dashboard /></PrivatePage>} />
       <Route path="*" element={<MigrationNotice />} />
