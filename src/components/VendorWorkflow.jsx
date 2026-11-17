@@ -10,7 +10,21 @@ const field=x=>x===null||x===undefined||String(x).trim()===''?'—':String(x);
 const date=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?String(v):new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeZone:'America/Sao_Paulo'}).format(d)};
 const simpleStatus={nao_registrado:'Aceite ainda não gerado',rascunho:'Pedido em rascunho',link_ativo:'Aguardando assinatura',assinado:'Aceite assinado',pendente:'Pendente'};
 function ItemTable({items}){
- return <div className="overflow-x-auto"><table className="w-full min-w-[810px] text-[13px] border-collapse">
+ return <div>
+  <div className="sm:hidden space-y-3 print:hidden" aria-label="Itens do pedido para celular">
+   {items.map((item,i)=><article key={i} className="border rounded-md p-3 space-y-2 text-sm">
+    <p className="font-semibold">{field(item.descricao)}</p>
+    <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+     <p><strong>Código:</strong> {field(item.codigoProdutoImpressao??item.codigoImpressao)}</p>
+     <p><strong>Unidade:</strong> {field(item.unidade)}</p>
+     <p><strong>Qtde. KG:</strong> {num(itemWeight(item))}</p>
+     <p><strong>Qtde. PC:</strong> {num(item.quantidadePecas)}</p>
+     <p><strong>Vr. unitário:</strong> {num(item.valorUnitarioPeca??item.valorUnitario)}</p>
+     <p><strong>Total:</strong> R$ {brl(item.valorTotal)}</p>
+    </div>
+   </article>)}
+  </div>
+  <div className="hidden sm:block print:block overflow-x-auto"><table className="w-full min-w-[810px] text-[13px] border-collapse">
   <thead><tr className="border-b border-black">{['Código','Descrição','Unid.','Qtde. KG','Qtde. PC','Vr. Unit.','Valor Total'].map(h=><th key={h} className="py-2 px-1 font-normal text-left">{h}</th>)}</tr></thead>
   <tbody>{items.map((item,i)=><tr key={i} className="align-top">
     <td className="p-1">{field(item.codigoProdutoImpressao??item.codigoImpressao)}</td>
@@ -21,7 +35,7 @@ function ItemTable({items}){
     <td className="p-1 text-right">{num(item.valorUnitarioPeca??item.valorUnitario)}</td>
     <td className="p-1 text-right">{brl(item.valorTotal)}</td>
   </tr>)}</tbody>
- </table></div>;
+ </table></div></div>;
 }
 function LabelValue({label,value}){return <div className="min-w-0"><strong>{label}:</strong> {field(value)}</div>}
 function PrintedOrder({order,items}){
@@ -49,7 +63,7 @@ function PrintedOrder({order,items}){
    <LabelValue label="Local de Entrega" value={order.localEntrega||order.enderecoEntrega}/>
    <LabelValue label="Obs" value={order.observacoes||order.obs}/>
   </div>
-  <div className="p-2 pt-12 sm:pt-20 min-h-[260px] sm:min-h-[360px]"><ItemTable items={items}/></div>
+  <div className="p-2 pt-5 sm:pt-20 min-h-[220px] sm:min-h-[360px] print:pt-20"><ItemTable items={items}/></div>
   <div className="border-t-2 border-black px-2 py-2 grid grid-cols-2 md:grid-cols-6 gap-1 text-[12px] sm:text-sm">
    <span><b>Tot. Qtde:</b> {summary.quantityGroups.length?summary.quantityGroups.map(g=>num(g.quantity,2)+' '+g.unit).join(' + '):'—'}</span>
    <span><b>Tot. Qtde KG:</b> {summary.weightKg===null?'—':num(summary.weightKg)+' KG'}</span>
@@ -150,7 +164,7 @@ export default function VendorWorkflow(){
     </div>
     <div className="border-t pt-3 space-y-2">
      <h4 className="font-semibold">Gerar e compartilhar aceite</h4>
-     <p className="text-sm text-amber-900">Emissão e link público ainda bloqueados: texto final e código de impressão precisam ser homologados. O fluxo novo não exige aprovação jurídica e comercial individual por pedido.</p>
+     <p className="text-sm text-amber-900">Emissão e link público ainda bloqueados enquanto faltarem os dados de impressão no conector SIC e a homologação do texto definitivo do termo. O fluxo não exige aprovação individual por pedido.</p>
      <div className="flex flex-wrap gap-2">
       <button type="button" disabled className="bg-slate-300 text-slate-700 rounded px-4 py-2 inline-flex gap-2 items-center"><FileText className="w-4 h-4"/>Gerar aceite</button>
       <button type="button" disabled className="border rounded px-4 py-2 inline-flex gap-2 items-center"><Copy className="w-4 h-4"/>Copiar link</button>
