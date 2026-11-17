@@ -11,7 +11,7 @@ function ItemTable({items}){
  return <div className="overflow-x-auto"><table className="w-full min-w-[810px] text-[13px] border-collapse">
   <thead><tr className="border-b border-black">{['Código','Descrição','Unid.','Qtde. KG','Qtde. PC','Vr. Unit.','Valor Total'].map(h=><th key={h} className="py-2 px-1 font-normal text-left">{h}</th>)}</tr></thead>
   <tbody>{items.map((item,i)=><tr key={i} className="align-top">
-    <td className="p-1">{field(item.codigoProdutoImpressao??item.codigoImpressao??item.codigoProdutoComercial??item.codigoProdutoInterno)}</td>
+    <td className="p-1">{field(item.codigoProdutoImpressao??item.codigoImpressao)}</td>
     <td className="p-1">{field(item.descricao)}</td>
     <td className="p-1">{field(item.unidade)}</td>
     <td className="p-1 text-right">{num(item.pesoLiquidoKg??item.quantidade)}</td>
