@@ -152,6 +152,10 @@ export default function SicLookup() {
         line('Qtd API: ' + quantity(item.quantidade) + ' ' + safeForExport(item.unidade) +
           ' | Unitario API (base a confirmar): ' + money(item.valorUnitario) +
           ' | Total: ' + money(item.valorTotal));
+        if (item.pesoLiquidoKg != null) line('Peso liquido: ' + quantity(item.pesoLiquidoKg) + ' kg');
+        if (item.pesoBrutoKg != null) line('Peso bruto: ' + quantity(item.pesoBrutoKg) + ' kg');
+        if (item.quantidadePecas != null) line('Quantidade de pecas: ' + quantity(item.quantidadePecas));
+        if (item.valorUnitarioPeca != null) line('Valor unitario por peca: ' + money(item.valorUnitarioPeca));
       });
       y += 4;
       line('CONFERENCIA FINANCEIRA', 12, 'bold');
@@ -273,7 +277,7 @@ export default function SicLookup() {
               <div className="w-full overflow-x-auto">
                 <table className="w-full min-w-[740px] text-sm">
                   <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
-                    <tr><th className="p-3">Item</th><th className="p-3">Código API*</th><th className="p-3">Descrição</th><th className="p-3 text-right">Qtd. API*</th><th className="p-3">Un.</th><th className="p-3 text-right">Unitário API*</th><th className="p-3 text-right">Total</th></tr>
+                    <tr><th className="p-3">Item</th><th className="p-3">Código API*</th><th className="p-3">Descrição</th><th className="p-3 text-right">Qtd. API*</th><th className="p-3">Un.</th><th className="p-3 text-right">Unitário API*</th><th className="p-3 text-right">Peso líquido (kg)</th><th className="p-3 text-right">Peças</th><th className="p-3 text-right">Unitário/peça</th><th className="p-3 text-right">Total</th></tr>
                   </thead>
                   <tbody className="divide-y">
                     {items.map((item, index) => (
@@ -284,6 +288,9 @@ export default function SicLookup() {
                         <td className="p-3 text-right">{quantity(item.quantidade)}</td>
                         <td className="p-3">{item.unidade || '—'}</td>
                         <td className="p-3 text-right">{money(item.valorUnitario)}</td>
+                        <td className="p-3 text-right">{item.pesoLiquidoKg == null ? '—' : quantity(item.pesoLiquidoKg)}</td>
+                        <td className="p-3 text-right">{item.quantidadePecas == null ? '—' : quantity(item.quantidadePecas)}</td>
+                        <td className="p-3 text-right">{item.valorUnitarioPeca == null ? '—' : money(item.valorUnitarioPeca)}</td>
                         <td className="p-3 text-right font-semibold">{money(item.valorTotal)}</td>
                       </tr>
                     ))}
