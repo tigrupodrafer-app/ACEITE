@@ -3,6 +3,7 @@ const { test, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { handler } = require('../netlify/functions/review-document.cjs');
 const { createHash } = require('node:crypto');
+const { sections, diagrams, legalWarnings, consent, reviewFlags } = require('../netlify/functions/_lib/legal-term-original.cjs');
 const originalFetch = global.fetch;
 const originalKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const orderId = '22222222-2222-4222-8222-222222222222';
@@ -63,6 +64,17 @@ function setup({ role = 'admin', status = 'rascunho', existing = [], tamper = fa
   };
   return state;
 }
+test('full original term contains 11 sections, installation subsections and three diagrams', () => {
+  assert.equal(sections.length, 11);
+  assert.equal(diagrams.length, 3);
+  assert.equal(sections[6].subsections.length, 8);
+  assert.equal(legalWarnings.length, 6);
+  assert.ok(consent.includes('Autorizo a fabricacao'));
+  assert.ok(reviewFlags.some(x => x.includes('perda automatica')));
+  assert.ok(sections[0].heading.includes('PRAZO DE GARANTIA'));
+  assert.ok(sections[10].heading.includes('PERDA AUTOMATICA DA GARANTIA'));
+});
+
 test('rejects unauthenticated users', async () => {
   setup();
   const result = await handler(ev('POST', { draftId: orderId }, false));
