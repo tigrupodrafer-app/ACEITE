@@ -4,7 +4,7 @@ const { respond, requireStaff, onlyMethod, handleError } = require('./_lib/backe
 exports.handler = async (event) => {
   try {
     onlyMethod(event, 'GET');
-    const { authUser, member } = await requireStaff(event);
+    const { authUser, member } = await requireStaff(event, { allowedRoles: ['admin', 'vendedor', 'aprovador'] });
     return respond(200, {
       id: authUser.id,
       email: authUser.email,
