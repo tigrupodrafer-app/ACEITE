@@ -1,4 +1,5 @@
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useState,useRef} from 'react';
+import OrderLoadingModal from '@/components/OrderLoadingModal';
 import printCalc from '@/lib/sicPrintTotals.cjs';
 const {totalsForPrint,itemWeight}=printCalc;
 import {apiGet,apiPost} from '@/lib/apiClient';
@@ -102,53 +103,122 @@ export default function VendorWorkflow(){
  const [status,setStatus]=useState(null);
  const [working,setWorking]=useState(false);
  const [error,setError]=useState('');
+ const [loadingPhase,setLoadingPhase]=useState(null);
+ const [loadingError,setLoadingError]=useState('');
+ const [elapsed,setElapsed]=useState(0);
+ const startedAt=useRef(0);
+ const querySequence=useRef(0);
+ const pollingBusy=useRef(false);
  useEffect(()=>{apiGet('/.netlify/functions/vendor-legal-preview').then(setTerm).catch(()=>setTerm(null));},[]);
+ useEffect(()=>{
+  if(!loadingPhase||loadingPhase==='erro')return;
+  const timer=window.setInterval(()=>setElapsed(Math.floor((Date.now()-startedAt.current)/1000)),1000);
+  return()=>window.clearInterval(timer);
+ },[loadingPhase]);
+ const failLoad=(message)=>{
+  setError(message);
+  setLoadingError(message);
+  setLoadingPhase('erro');
+  setWorking(false);
+ };
  const refreshStatus=async n=>{
-  try{setStatus(await apiGet('/.netlify/functions/vendor-acceptance-status?number='+encodeURIComponent(n)))}catch(e){setError(e.message)}
+  try{
+   const data=await apiGet('/.netlify/functions/vendor-acceptance-status?number='+encodeURIComponent(n));
+   setStatus(data);
+  }catch(e){
+   // The SIC order remains usable even if the acceptance history endpoint is unavailable.
+   setStatus({state:'indisponivel'});
+   setError('Pedido consultado; histórico de aceite temporariamente indisponível: '+e.message);
+  }
+ };
+ const finishResult=async (result,seq)=>{
+  if(seq!==querySequence.current)return;
+  if(!result?.pedidoCompleto||!Array.isArray(result.itens)){
+   failLoad('Pedido retornou sem os dados necessários. Consulte novamente.');
+   return;
+  }
+  setLoadingPhase('montando');
+  setOrder(result);
+  setLoadingPhase('verificando');
+  await refreshStatus(String(result.pedidoCompleto.numero||number));
+  if(seq===querySequence.current){setLoadingPhase(null);setWorking(false);}
  };
  async function consult(e){
-  e.preventDefault();setOrder(null);setStatus(null);setRequest(null);setError('');
-  if(!/^[1-9]\d{0,11}$/.test(number)){setError('Informe um número válido.');return}
-  setWorking(true);
+  e.preventDefault();
+  if(loadingPhase&&loadingPhase!=='erro')return;
+  const query=number.trim();
+  if(!/^[1-9]\d{0,11}$/.test(query)){setError('Informe um número de pedido válido.');return;}
+  const seq=++querySequence.current;
+  setOrder(null);setStatus(null);setRequest(null);setError('');setLoadingError('');
+  setElapsed(0);startedAt.current=Date.now();
+  setLoadingPhase('enviando');setWorking(true);
   try{
-   const r=await apiPost('/.netlify/functions/sic-request',{orderNumber:number});
-   setRequest({requestId:r.requestId,status:r.status});
-   // A reused SIC consultation can already be completed; do not wait for polling.
+   const r=await apiPost('/.netlify/functions/sic-request',{orderNumber:query});
+   if(seq!==querySequence.current)return;
+   if(!r.requestId)throw Error('O conector não retornou identificador da consulta.');
    if(r.status==='completed'){
     const ready=await apiGet('/.netlify/functions/sic-request?id='+encodeURIComponent(r.requestId));
-    if(ready.result?.pedidoCompleto&&Array.isArray(ready.result?.itens))setOrder(ready.result);
-   }
-   await refreshStatus(number);
-  }catch(e){setError(e.message)}finally{setWorking(false)}
+    if(seq!==querySequence.current)return;
+    setRequest({requestId:r.requestId,status:'completed'});
+    await finishResult(ready.result,seq);
+   }else if(['pending','processing'].includes(r.status)){
+    setRequest({requestId:r.requestId,status:r.status});
+    setLoadingPhase(r.status);
+   }else throw Error('O conector não iniciou a consulta. Tente novamente.');
+  }catch(e){if(seq===querySequence.current)failLoad(e.message||'Falha ao iniciar consulta SIC');}
+  finally{if(seq===querySequence.current)setWorking(false);}
  }
  useEffect(()=>{
   if(!request?.requestId||!['pending','processing'].includes(request.status))return;
+  const seq=querySequence.current;
   let active=true;
-  const timer=window.setInterval(async()=>{
+  let failures=0;
+  const poll=async()=>{
+   if(!active||pollingBusy.current)return;
+   pollingBusy.current=true;
    try{
-    const r=await apiGet('/.netlify/functions/sic-request?id='+encodeURIComponent(request.requestId));
-    if(!active)return;
-    setRequest({requestId:r.requestId,status:r.status});
-    if(r.status==='completed'){
-     if(!r.result?.pedidoCompleto||!Array.isArray(r.result?.itens))setError('Pedido sem detalhes disponíveis no SIC.');
-     else {
-      setOrder(r.result);
-      void refreshStatus(String(r.result.pedidoCompleto.numero||number));
-     }
+    if(Date.now()-startedAt.current>180000){
+     failLoad('O servidor demorou além de 3 minutos. Verifique o conector SIC e tente uma nova consulta.');
+     setRequest(r=>r&&({...r,status:'timeout'}));
+     return;
     }
-    if(r.status==='failed'||r.status==='expired')setError(r.error||'Consulta SIC não concluída.');
-   }catch(e){if(active)setError(e.message)}
-  },3000);
-  return()=>{active=false;window.clearInterval(timer)};
+    const r=await apiGet('/.netlify/functions/sic-request?id='+encodeURIComponent(request.requestId));
+    if(!active||seq!==querySequence.current)return;
+    failures=0;
+    if(r.status==='completed'){
+     setRequest({requestId:r.requestId,status:'completed'});
+     await finishResult(r.result,seq);
+    }else if(['failed','expired'].includes(r.status)){
+     setRequest({requestId:r.requestId,status:r.status});
+     failLoad(r.error||'O conector não concluiu a consulta. Verifique o serviço interno.');
+    }else if(['pending','processing'].includes(r.status)){
+     setRequest({requestId:r.requestId,status:r.status});
+     setLoadingPhase(r.status);
+    }else failLoad('O conector retornou um estado não reconhecido.');
+   }catch(e){
+    if(!active||seq!==querySequence.current)return;
+    failures++;
+    if(failures>=3){
+     setRequest(r=>r&&({...r,status:'failed'}));
+     failLoad('A conexão com o SIC falhou após três tentativas. '+(e.message||''));
+    }
+   }finally{pollingBusy.current=false;}
+  };
+  void poll();
+  const timer=window.setInterval(()=>void poll(),3000);
+  return()=>{active=false;window.clearInterval(timer);};
  },[request?.requestId,request?.status]);
+ const closeError=()=>{setLoadingPhase(null);setLoadingError('');setRequest(null);querySequence.current++;};
  const items=order?.itens||[];
  const different=items.some(i=>i.codigoProdutoImpressao==null&&i.codigoImpressao==null);
  return <section className="space-y-5">
+  <OrderLoadingModal open={Boolean(loadingPhase)} phase={loadingPhase} orderNumber={number}
+   elapsed={elapsed} error={loadingError} onClose={closeError}/>
   <div className="bg-white p-5 border rounded-lg space-y-3 print:hidden">
    <h2 className="font-bold text-xl">Consultar pedido e gerar aceite</h2>
    <form onSubmit={consult} className="flex flex-wrap gap-2">
     <input className="border rounded px-3 py-2 flex-1 min-w-[170px]" inputMode="numeric" placeholder="Número do pedido SIC" value={number} onChange={e=>setNumber(e.target.value)} aria-label="Número do pedido"/>
-    <button disabled={working} type="submit" className="flex gap-2 items-center bg-slate-900 text-white px-5 py-2 rounded disabled:opacity-50">
+    <button disabled={working||Boolean(loadingPhase&&loadingPhase!=='erro')} type="submit" className="flex gap-2 items-center bg-slate-900 text-white px-5 py-2 rounded disabled:opacity-50">
      {working?<Loader2 className="w-4 h-4 animate-spin"/>:<Search className="w-4 h-4"/>}Consultar
     </button>
    </form>
