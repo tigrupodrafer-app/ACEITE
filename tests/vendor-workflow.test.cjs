@@ -67,7 +67,7 @@ test('interface do vendedor tem espelho, termo e acao de verificar',()=>{
  assert.match(c,/Qtde. KG/);
  assert.match(c,/Qtde. PC/);
  assert.match(c,/WhatsApp/);
- assert.match(c,/código de impressão/);
+ assert.match(c,/código usado na impressão/);
  assert.doesNotMatch(c,/FormalApproval|ApprovalDossier|aceite_demo_flows/);
 });
 after(()=>{
