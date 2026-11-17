@@ -2,6 +2,7 @@
 const { test, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { handler } = require('../netlify/functions/review-document.cjs');
+const { createHash } = require('node:crypto');
 const originalFetch = global.fetch;
 const originalKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const orderId = '22222222-2222-4222-8222-222222222222';
@@ -100,6 +101,35 @@ test('existing document is reused rather than overwritten', async () => {
   assert.equal(state.stored, null);
   assert.equal(JSON.parse(result.body).created, false);
 });
+
+test('private download verifies SHA-256 before returning bytes', async () => {
+  const digest = createHash('sha256').update('PDF').digest('hex');
+  setup({ existing: [{
+    id: '33333333-3333-4333-8333-333333333333', version: 1, file_sha256: digest,
+    storage_path: 'reviews/' + orderId + '/v1-11111111-1111-4111-8111-111111111111.pdf',
+    created_at: '2026-11-17T10:00:00Z',
+  }] });
+  const evt = ev('GET');
+  evt.queryStringParameters.download = '1';
+  const result = await handler(evt);
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.headers['Content-Type'], 'application/pdf');
+  assert.equal(Buffer.from(result.body, 'base64').toString(), 'PDF');
+});
+test('altered private PDF fails integrity verification', async () => {
+  setup({ tamper: true, existing: [{
+    id: '33333333-3333-4333-8333-333333333333', version: 1,
+    file_sha256: '0'.repeat(64),
+    storage_path: 'reviews/' + orderId + '/v1-11111111-1111-4111-8111-111111111111.pdf',
+    created_at: '2026-11-17T10:00:00Z',
+  }] });
+  const evt = ev('GET');
+  evt.queryStringParameters.download = '1';
+  const result = await handler(evt);
+  assert.equal(result.statusCode, 500);
+  assert.equal(result.headers['Content-Type'], 'application/json; charset=utf-8');
+});
+
 after(() => {
   global.fetch = originalFetch;
   if (originalKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
