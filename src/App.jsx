@@ -9,6 +9,7 @@ import PublicAcceptance from '@/pages/PublicAcceptance';
 import Dashboard from '@/pages/Dashboard';
 import Layout from '@/Layout';
 import ApproverHome from '@/pages/ApproverHome';
+import AcceptancePresentation from '@/pages/AcceptancePresentation';
 
 // Only migrated pages are imported. Legacy Base44 modules do not enter the bundle.
 // Remaining pages will be enabled one at a time after replacing backend calls.
@@ -34,6 +35,14 @@ function PrivatePage({ children }) {
   return <Layout currentPageName="Dashboard">{children}</Layout>;
 }
 
+function AdminPresentation() {
+  const {isLoadingAuth,isAuthenticated,user}=useAuth();
+  if(isLoadingAuth) return <div className="min-h-screen flex items-center justify-center">Validando acesso...</div>;
+  if(!isAuthenticated) return <Navigate to="/Login" replace/>;
+  if(user?.role!=='admin') return <div role="alert" className="p-10 text-red-800">Demonstração disponível apenas à administração TI.</div>;
+  return <AcceptancePresentation/>;
+}
+
 function MigrationNotice() {
   return (
     <PrivatePage>
@@ -52,6 +61,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/Login" element={<Login />} />
       <Route path="/AssinarAceite" element={<PublicAcceptance />} />
+      <Route path="/Apresentacao" element={<AdminPresentation />} />
       <Route path="/" element={<PrivatePage><Dashboard /></PrivatePage>} />
       <Route path="/Dashboard" element={<PrivatePage><Dashboard /></PrivatePage>} />
       <Route path="*" element={<MigrationNotice />} />
