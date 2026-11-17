@@ -50,7 +50,7 @@ function PrintedOrder({order,items}){
   <div className="p-2 pt-12 sm:pt-20 min-h-[260px] sm:min-h-[360px]"><ItemTable items={items}/></div>
   <div className="border-t-2 border-black px-2 py-2 grid grid-cols-2 md:grid-cols-6 gap-1 text-[12px] sm:text-sm">
    <span><b>Tot. Qtde:</b> {num(items.reduce((n,i)=>n+Number(i.quantidadePecas||0),0),2)}</span>
-   <span><b>Tot. Qtde KG:</b> {num(items.reduce((n,i)=>n+Number(i.pesoLiquidoKg||0),0)} KG</span>
+   <span><b>Tot. Qtde KG:</b> {num(items.reduce((n,i)=>n+Number(i.pesoLiquidoKg||0),0))} KG</span>
    <span><b>Frete:</b> {brl(totals.frete)}</span>
    <span><b>Itens:</b> {brl(totals.subtotal)}</span>
    <span><b>Desconto:</b> {brl(totals.desconto)}</span>
