@@ -1,6 +1,7 @@
 // SRV-DRAFER / ACEITE-API / src/services/itensService.js
 // Leia somente ARQES15: campos homologados em pedido 352488.
-// Substituicao controlada do servico existente; manter codigoProduto=PRODUTO sem adivinhar joins.
+// Vinculo confirmado em SQL de homologacao: C.CODIGO = I.PRODUTO.
+// Preservar codigoProduto para consumidores existentes; adicionar codigos de acesso em campos separados.
 const { conectar } = require('../config/firebird');
 
 function buscarItensPedido(numeroPedido) {
@@ -13,6 +14,8 @@ function buscarItensPedido(numeroPedido) {
       const sql = [
         'SELECT I.ITEM AS ITEM,',
         '  I.PRODUTO AS CODIGO_PRODUTO,',
+        '  C.CODACESSOG AS CODIGO_COMERCIAL,',
+        '  C.CODACESSO AS REFERENCIA_FORNECEDOR,',
         '  I.NOME AS PRODUTO,',
         '  I.UND AS UNIDADE,',
         '  I.QTDE AS QUANTIDADE,',
@@ -24,6 +27,7 @@ function buscarItensPedido(numeroPedido) {
         '  I.VUNIT_PC AS VALOR_UNITARIO_PECA,',
         '  I.PESO_PC AS PESO_PECA',
         'FROM ARQES15 I',
+        'LEFT JOIN CAD_PRODUTO C ON C.CODIGO = I.PRODUTO',
         'WHERE I.PEDIDO = ?',
         'ORDER BY I.ITEM',
       ].join('\n');
@@ -34,7 +38,10 @@ function buscarItensPedido(numeroPedido) {
         if (erroConsulta) return reject(erroConsulta);
         resolve((registros || []).map(item => ({
           item: item.ITEM,
-          codigoProduto: item.CODIGO_PRODUTO, // No teste 352488 retorna 1379; codigo 3847 exige join homologado.
+          codigoProduto: item.CODIGO_PRODUTO, // Compatibilidade: codigo interno para clientes antigos.
+          codigoProdutoInterno: item.CODIGO_PRODUTO,
+          codigoProdutoComercial: item.CODIGO_COMERCIAL,
+          referenciaFornecedor: item.REFERENCIA_FORNECEDOR,
           descricao: item.PRODUTO,
           unidade: item.UNIDADE,
           quantidade: item.QUANTIDADE,
