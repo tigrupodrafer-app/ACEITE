@@ -48,7 +48,9 @@ exports.handler = async (event) => {
     const calculated = num(validacao?.somaItens);
     if (!pedido || !Array.isArray(itens) || !itens.length || itens.length > 200 ||
         !Number.isSafeInteger(orderNumber) || !Number.isSafeInteger(company) || company <= 0 ||
-        num(pedido.numero) !== orderNumber || clientName.length < 2 || clientName.length > 220 ||
+        num(pedido.numero) !== orderNumber ||
+        String(pedido.liberado || '').trim().toUpperCase() !== 'S' ||
+        clientName.length < 2 || clientName.length > 220 ||
         validacao?.valido !== true || !Number.isFinite(total) || total <= 0 ||
         !Number.isFinite(calculated) || Math.abs(total - calculated) > 0.02 ||
         itens.some(i => !i || typeof i.descricao !== 'string' || !Number.isFinite(num(i.valorTotal)))) {
