@@ -194,9 +194,11 @@ async function versions(id) {
 exports.handler = async (event) => {
   try {
     if (!['POST', 'GET'].includes(event.httpMethod)) throw invalid('Metodo nao permitido', 405);
-    const { authUser, member } = await requireStaff(event);
-    // Restrict document issuance/reading to administrators in this phase.
-    if (member.role !== 'admin') throw invalid('Somente administradores podem preparar documentos', 403);
+    const { authUser, member } = await requireStaff(event, { allowedRoles: ['admin','aprovador'] });
+    // Only administrators can generate/change PDFs; appointed reviewers can read them.
+    if (event.httpMethod === 'POST' && member.role !== 'admin') {
+      throw invalid('Somente administradores podem gerar documentos', 403);
+    }
     let id;
     let newVersion = false;
     if (event.httpMethod === 'POST') {
@@ -213,6 +215,14 @@ exports.handler = async (event) => {
     if (!order || order.origin !== 'SIC_SUPRASYS' || order.status !== 'rascunho' ||
         order.details?.draftOnly !== true || order.details?.legalDocumentApproved !== false) {
       throw invalid('Pedido indisponivel para revisao', 409);
+    }
+    if (member.role === 'aprovador') {
+      const grants = await supabaseFetch('/rest/v1/aceite_approval_authorizers?user_id=eq.'+
+        encodeURIComponent(authUser.id)+'&sic_company_id=eq.'+order.sic_company_id+
+        '&active=eq.true&select=scope&limit=2');
+      if (!Array.isArray(grants) || !grants.some(g => ['juridico','comercial'].includes(g.scope))) {
+        throw invalid('Acesso ao documento nao autorizado para esta empresa', 403);
+      }
     }
     const docs = await versions(id);
     const latest = docs[0];
