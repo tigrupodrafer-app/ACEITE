@@ -141,15 +141,17 @@ export default function SicLookup() {
       line('Empresa SIC: ' + safeForExport(pedido.empresa));
       line('Cliente: ' + safeForExport(pedido.cliente?.nome || 'Nao informado'));
       line('Data do pedido: ' + dateText(pedido.dataPedido));
+      line('Previsao de entrega: ' + dateText(pedido.dataEntrega));
       line('Situacao SIC (codigo bruto): ' + safeForExport(pedido.situacao));
       line('Liberado SIC: ' + safeForExport(pedido.liberado));
       y += 4;
       line('ITENS (' + items.length + ')', 12, 'bold');
       items.forEach((item, index) => {
         line((index + 1) + '. ' + safeForExport(item.descricao || 'Produto'));
-        line('Codigo: ' + safeForExport(item.codigoProduto) + ' | Qtd: ' +
-          quantity(item.quantidade) + ' ' + safeForExport(item.unidade) +
-          ' | Unitario: ' + money(item.valorUnitario) + ' | Total: ' + money(item.valorTotal));
+        line('Codigo retornado pela API (conciliacao SIC pendente): ' + safeForExport(item.codigoProduto));
+        line('Qtd API: ' + quantity(item.quantidade) + ' ' + safeForExport(item.unidade) +
+          ' | Unitario API (base a confirmar): ' + money(item.valorUnitario) +
+          ' | Total: ' + money(item.valorTotal));
       });
       y += 4;
       line('CONFERENCIA FINANCEIRA', 12, 'bold');
@@ -260,10 +262,15 @@ export default function SicLookup() {
                 <Package className="h-4 w-4" />
                 <h4 className="font-semibold">Itens do pedido ({items.length})</h4>
               </div>
+              <p className="px-4 py-3 text-xs text-amber-900 bg-amber-50 border-b border-amber-200">
+                Código e quantidades exibidos conforme a API SIC atual. No pedido 352488, a tela do SIC apresenta código 3847,
+                enquanto a API retorna 1379; a correspondência e a base do valor unitário ainda precisam ser confirmadas.
+                Peso em KG e quantidade de peças não são inferidos a partir da unidade MTD.
+              </p>
               <div className="w-full overflow-x-auto">
                 <table className="w-full min-w-[740px] text-sm">
                   <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
-                    <tr><th className="p-3">Item</th><th className="p-3">Código</th><th className="p-3">Descrição</th><th className="p-3 text-right">Quantidade</th><th className="p-3">Un.</th><th className="p-3 text-right">Unitário</th><th className="p-3 text-right">Total</th></tr>
+                    <tr><th className="p-3">Item</th><th className="p-3">Código API*</th><th className="p-3">Descrição</th><th className="p-3 text-right">Qtd. API*</th><th className="p-3">Un.</th><th className="p-3 text-right">Unitário API*</th><th className="p-3 text-right">Total</th></tr>
                   </thead>
                   <tbody className="divide-y">
                     {items.map((item, index) => (
