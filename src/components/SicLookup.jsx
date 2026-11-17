@@ -388,7 +388,7 @@ export default function SicLookup() {
                     <Button type="button" variant="outline" disabled={preparingReview || !!reviewDocument}
                       onClick={() => prepareReviewDocument(false)} className="gap-2">
                       {preparingReview ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-                      {reviewDocument ? 'PDF de revisão arquivado' : 'Gerar PDF versionado para revisão'}
+                      {reviewDocument ? 'PDF de revisão arquivado' : 'Gerar termo integral versionado (PDF)'}
                     </Button>
                     {reviewDocument && (
                       <Button type="button" variant="outline" disabled={preparingReview || reviewDocument.version >= 20}
@@ -421,7 +421,7 @@ export default function SicLookup() {
                 <Button type="button" variant="outline" onClick={downloadDraft}
                   disabled={draftExporting} className="gap-2 bg-white">
                   {draftExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-                  Baixar minuta do termo (PDF)
+                  Baixar minuta resumida (PDF)
                 </Button>
                 <Button type="button" disabled={!canGenerateAcceptance} className="gap-2"
                   title="Pendente de homologação jurídica, regras comerciais e emissão final">
