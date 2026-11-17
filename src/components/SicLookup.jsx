@@ -185,7 +185,7 @@ export default function SicLookup() {
           y += size > 12 ? 8 : 6;
         }
       }
-      line('DRAFER ACEITE - ESPELHO DE CONSULTA SIC', 15, 'bold');
+      line('ACEITE DRAFER - ESPELHO DE CONSULTA SIC', 15, 'bold');
       line('DOCUMENTO DE CONFERENCIA - NAO E TERMO JURIDICO', 10, 'bold');
       y += 5;
       line('Pedido: ' + safeForExport(pedido.numero || state.orderNumber), 12, 'bold');
