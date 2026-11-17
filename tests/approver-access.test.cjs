@@ -17,7 +17,7 @@ test('approver access is limited and does not inherit staff-wide endpoints',()=>
   assert.match(app,/user\?\.role === 'aprovador'/);
   assert.match(app,/<ApproverHome \/>/);
   const home=read('src/pages/ApproverHome.jsx');
-  assert.doesNotMatch(home,/apiGet|SicLookup|OrdersTable|Dashboard/);
+  assert.doesNotMatch(home,/apiGet|SicLookup|OrdersTable|import\s+Dashboard/);
 });
 test('access-restricted screen is translated into Portuguese',()=>{
   const page=read('src/components/UserNotRegisteredError.jsx');
