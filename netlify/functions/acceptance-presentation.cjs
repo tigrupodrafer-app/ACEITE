@@ -2,7 +2,7 @@
 // Read-only presentation data. Admin login required, no public link/token/signature.
 const { respond, requireStaff, supabaseFetch, handleError, onlyMethod } = require('./_lib/backend.cjs');
 const { sections, diagrams, legalWarnings, consent, reviewFlags } = require('./_lib/legal-term-original.cjs');
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const failure = (message, statusCode=400) => Object.assign(new Error(message), {statusCode});
 
 exports.handler = async (event) => {
