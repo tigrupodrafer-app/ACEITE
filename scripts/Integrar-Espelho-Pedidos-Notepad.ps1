@@ -39,7 +39,7 @@ try {
   if(-not $source.Contains($anchor) -or -not $source.Contains($point) -or -not $source.Contains($oldMerge)){
    throw 'Rota atual difere da versao auditada; nenhuma substituicao automatica realizada.'
   }
-  if(([regex]::Matches($source,[regex]::Escape($anchor))).Count -ne 1 -or`n     ([regex]::Matches($source,[regex]::Escape($point))).Count -ne 1 -or`n     ([regex]::Matches($source,[regex]::Escape($oldMerge))).Count -ne 1){
+  if(([regex]::Matches($source,[regex]::Escape($anchor))).Count -ne 1 -or ([regex]::Matches($source,[regex]::Escape($point))).Count -ne 1 -or ([regex]::Matches($source,[regex]::Escape($oldMerge))).Count -ne 1){
    throw 'Marcador ausente ou realmente duplicado na rota. Nenhuma alteracao realizada.'
   }
   $nl=[Environment]::NewLine
