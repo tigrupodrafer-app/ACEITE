@@ -3,6 +3,7 @@
 // The service key is used on the backend only; all routes require verified staff.
 const { createHash, randomUUID } = require('node:crypto');
 const { jsPDF } = require('jspdf');
+const { sections, diagrams, legalWarnings, consent, reviewFlags } = require('./_lib/legal-term-original.cjs');
 const { respond, requireStaff, supabaseFetch, getSecretConfig, handleError } = require('./_lib/backend.cjs');
 
 const ORDER = '/rest/v1/aceite_orders';
@@ -92,18 +93,60 @@ function pdfForReview(order, version) {
     ' | Total: ' + formatBRL(pedido.valores?.total), { bold: true });
   p('Conferencia aritmetica: ' + (validacao.valido === true ? 'APROVADA' : 'PENDENTE'));
 
-  p('2. TEXTO PRELIMINAR SUJEITO A REVISAO JURIDICA', { size: 12, bold: true });
-  p('2.1 O cliente devera conferir materiais, especificacoes, quantidades e condicoes do pedido antes de eventual autorizacao de fabricacao.');
-  p('2.2 Materiais sob medida podem exigir condicoes comerciais especificas para alteracao, cancelamento ou devolucao, sempre respeitada a legislacao aplicavel.');
-  p('2.3 Transporte, recebimento, armazenagem, manuseio e instalacao devem seguir as orientacoes tecnicas aplicaveis aos produtos adquiridos.');
-  p('2.4 Garantia, limitacoes, prazos e responsabilidades dependem da aprovacao juridica do Termo de Garantia, Armazenagem, Manuseio e Instalacao.');
-  p('2.5 Eventual aceite exigira apresentacao do documento definitivo e registro comprovavel da manifestacao de vontade do cliente.');
-  p('3. PENDENCIAS PARA ASSINATURA', { size: 12, bold: true });
-  p('[ ] Validar interpretacao de SITU e elegibilidade de fabricacao no SIC.');
-  p('[ ] Identificar formalmente a empresa emitente e aprovar dados fiscais.');
-  p('[ ] Aprovar texto integral e versao juridica, inclusive direitos do consumidor.');
-  p('[ ] Homologar assinatura, token, hash do texto aprovado e evidencias.');
-  p('NAO ASSINAR - NAO ENVIAR - NAO AUTORIZA FABRICACAO.', { bold: true });
+  p('TERMO DE GARANTIA, ARMAZENAGEM, MANUSEIO E INSTALACAO DE TELHAS', { size: 13, bold: true });
+  p('GRUPO DRAFER', { bold: true });
+  p('Este termo estabelece as condicoes de garantia, responsabilidade, armazenamento, manuseio, transporte e instalacao das telhas fornecidas pelo GRUPO DRAFER. Aplica-se a: Telhas Galvalume, Telhas de Aco Natural, Telhas Pre-Pintadas e Telhas Termoacusticas.');
+  p('NOTA: Texto da versao original preservado exclusivamente para revisao. As clausulas nao estao juridicamente aprovadas e podem nao se aplicar a todos os materiais do pedido.', { bold: true });
+
+  for (const section of sections) {
+    if (y > h - 40) { pdf.addPage(); header(); y = 26; }
+    p(section.heading, { size: 12, bold: true, after: 4 });
+    for (const t of section.paragraphs || []) p(t);
+    for (const list of section.lists || []) {
+      if (list.intro) p(list.intro, { bold: true });
+      for (const item of list.items) p('- ' + item, { after: 0.8 });
+      y += 3;
+    }
+    for (const t of section.after || []) p(t, { bold: true });
+    for (const sub of section.subsections || []) {
+      p(sub.title, { bold: true, after: 1.5 });
+      if (sub.text) p(sub.text);
+      for (const t of sub.bullets || []) p('- ' + t, { after: 0.8 });
+    }
+    y += 3;
+  }
+
+  p('DIAGRAMAS TECNICOS DE INSTALACAO - ILUSTRACOES ORIGINAIS', { size: 12, bold: true });
+  p('Os esquemas abaixo sao ilustrativos; necessitam validacao por responsavel tecnico, conforme o perfil e o produto.', { bold: true });
+  for (const diagram of diagrams) {
+    if (y > h - 65) { pdf.addPage(); header(); y = 26; }
+    p(diagram.title, { size: 11, bold: true });
+    pdf.setFont('courier', 'normal');
+    pdf.setFontSize(8);
+    for (const str of diagram.lines) {
+      if (y > h - 24) { pdf.addPage(); header(); y = 26; }
+      pdf.setFont('courier', 'normal');
+      pdf.setFontSize(8);
+      const ascii = String(str).slice(0, 74);
+      pdf.text(ascii, margin + 2, y);
+      y += 4.6;
+    }
+    y += 6;
+  }
+
+  p('AVISO LEGAL - LEIA ATENTAMENTE (TEXTO ORIGINAL EM REVISAO)', { size: 12, bold: true });
+  p('ATENCAO - IMPORTANTE. O cliente declara estar ciente de que:');
+  for (const warning of legalWarnings) p('- ' + warning);
+  p('DECLARACAO ORIGINAL - NAO DISPONIVEL PARA ASSINATURA:', { bold: true });
+  p(consent);
+  p('BOTAO ORIGINAL: ACEITAR E AUTORIZAR PRODUCAO DE TELHAS (DESABILITADO)', { bold: true });
+
+  p('PONTOS DE REVISAO JURIDICA E TECNICA', { size: 12, bold: true });
+  for (const issue of reviewFlags) p('[ ] ' + issue, { after: 1 });
+  p('[ ] Validar interpretacao de SITU, faturamento e elegibilidade de fabricacao no SIC.');
+  p('[ ] Conferir empresa emitente, documento fiscal, identificacao do cliente e dados obrigatorios.');
+  p('[ ] Homologar texto final, versionamento, assinatura, evidencias e direitos do consumidor.');
+  p('NAO ASSINAR - NAO ENVIAR AO CLIENTE - NAO AUTORIZA FABRICACAO.', { bold: true });
   const count = pdf.getNumberOfPages();
   for (let i = 1; i <= count; i++) {
     pdf.setPage(i);
