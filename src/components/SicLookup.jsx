@@ -145,7 +145,7 @@ export default function SicLookup() {
     try {
       await apiDownloadPdf(
         '/.netlify/functions/review-document?draftId=' + encodeURIComponent(savedDraft.draftId) + '&download=1',
-        'minuta-revisao-' + String(pedido?.numero ?? '').replace(/\\D/g, '') + '-v' + reviewDocument.version + '.pdf'
+        'minuta-revisao-' + String(pedido?.numero ?? '').replace(/\D/g, '') + '-v' + reviewDocument.version + '.pdf'
       );
     } catch (e) {
       setError(e.message || 'Não foi possível baixar o documento arquivado.');
