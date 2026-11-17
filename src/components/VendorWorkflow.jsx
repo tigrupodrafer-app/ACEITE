@@ -113,6 +113,11 @@ export default function VendorWorkflow(){
   try{
    const r=await apiPost('/.netlify/functions/sic-request',{orderNumber:number});
    setRequest({requestId:r.requestId,status:r.status});
+   // A reused SIC consultation can already be completed; do not wait for polling.
+   if(r.status==='completed'){
+    const ready=await apiGet('/.netlify/functions/sic-request?id='+encodeURIComponent(r.requestId));
+    if(ready.result?.pedidoCompleto&&Array.isArray(ready.result?.itens))setOrder(ready.result);
+   }
    await refreshStatus(number);
   }catch(e){setError(e.message)}finally{setWorking(false)}
  }
@@ -126,7 +131,10 @@ export default function VendorWorkflow(){
     setRequest({requestId:r.requestId,status:r.status});
     if(r.status==='completed'){
      if(!r.result?.pedidoCompleto||!Array.isArray(r.result?.itens))setError('Pedido sem detalhes disponíveis no SIC.');
-     else setOrder(r.result);
+     else {
+      setOrder(r.result);
+      void refreshStatus(String(r.result.pedidoCompleto.numero||number));
+     }
     }
     if(r.status==='failed'||r.status==='expired')setError(r.error||'Consulta SIC não concluída.');
    }catch(e){if(active)setError(e.message)}
