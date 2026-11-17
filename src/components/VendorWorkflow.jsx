@@ -29,7 +29,7 @@ function PrintedOrder({order,items}){
  return <article className="bg-white border-2 border-slate-700 text-slate-950 font-[Arial] print:shadow-none print:border-black" aria-label="Espelho de impressão do pedido SIC">
   <header className="border-b-2 border-black p-2">
    <div className="grid md:grid-cols-3 gap-2 items-start">
-    <div><h2 className="font-bold text-lg sm:text-2xl leading-none">{field(order.nomeEmpresa||order.razaoSocialEmpresa||'DRAFER DISTR. DE ACO')}</h2>
+    <div><h2 className="font-bold text-lg sm:text-2xl leading-none">{field(order.nomeEmpresa||order.razaoSocialEmpresa||null)}</h2>
      <p className="text-sm sm:text-lg mt-2">FONE: {field(order.telefoneEmpresa)}</p></div>
     <div className="text-center">
      <p className="text-sm sm:text-lg">{field(order.tipoVenda)}</p>
