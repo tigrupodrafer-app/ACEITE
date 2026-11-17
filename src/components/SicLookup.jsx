@@ -263,8 +263,11 @@ export default function SicLookup() {
                 <h4 className="font-semibold">Itens do pedido ({items.length})</h4>
               </div>
               <p className="px-4 py-3 text-xs text-amber-900 bg-amber-50 border-b border-amber-200">
-                Código e quantidades exibidos conforme a API SIC atual. No pedido 352488, a tela do SIC apresenta código 3847,
-                enquanto a API retorna 1379; a correspondência e a base do valor unitário ainda precisam ser confirmadas.
+                Código, quantidade e valores unitários exibidos conforme a API SIC atual.
+                {String(pedido.numero) === '352488' && String(items[0]?.codigoProduto) === '1379'
+                  ? ' Neste pedido, a tela do SIC apresenta código 3847 enquanto a API retorna 1379.'
+                  : ''}
+                {' '}A correspondência dos campos e a base do valor unitário ainda precisam ser confirmadas.
                 Peso em KG e quantidade de peças não são inferidos a partir da unidade MTD.
               </p>
               <div className="w-full overflow-x-auto">
