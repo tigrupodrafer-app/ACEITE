@@ -14,7 +14,7 @@ export default function Layout({ children }) {
           <Link to="/Dashboard" className="text-white hover:opacity-80 flex gap-3 items-center">
             <div className="bg-red-700 text-white font-extrabold px-3 py-2 rounded">D</div>
             <div>
-              <p className="font-semibold text-sm">DRAFER ACEITE</p>
+              <p className="font-semibold text-sm">ACEITE DRAFER</p>
               <p className="text-xs text-slate-300">Sistema de Aceite Jurídico</p>
             </div>
           </Link>
