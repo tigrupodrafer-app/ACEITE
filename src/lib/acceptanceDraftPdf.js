@@ -60,7 +60,7 @@ export async function exportAcceptanceDraft({ pedido, itens, validacao }) {
   }
 
   pageHeader();
-  paragraph('DRAFER ACEITE - TERMO DE ACEITE DE PEDIDO E AUTORIZACAO DE FABRICACAO', { size: 13, bold: true });
+  paragraph('ACEITE DRAFER - TERMO DE ACEITE DE PEDIDO E AUTORIZACAO DE FABRICACAO', { size: 13, bold: true });
   paragraph('Versao preliminar para conferencia interna - sem validade como instrumento de aceite.', { bold: true });
   paragraph('ORIGEM: Consulta ao sistema SIC SupraSYS. Minuta gerada no navegador, nao armazenada nem assinada.');
   paragraph('Pedido SIC: ' + normalize(pedido.numero), { bold: true });
