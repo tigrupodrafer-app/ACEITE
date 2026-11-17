@@ -43,7 +43,7 @@ async function supabaseFetch(path, { method = 'GET', body, headers = {}, userTok
   return text ? JSON.parse(text) : null;
 }
 
-async function requireStaff(event) {
+async function requireStaff(event, { allowedRoles = ['admin', 'vendedor'] } = {}) {
   const header = event.headers?.authorization || event.headers?.Authorization || '';
   const match = /^Bearer ([^\s]+)$/.exec(header);
   if (!match || match[1].length > 8192) {
@@ -55,7 +55,7 @@ async function requireStaff(event) {
   const member = await supabaseFetch(
     '/rest/v1/aceite_members?user_id=eq.' + encodeURIComponent(authUser.id) + '&select=user_id,role,active,full_name,phone&limit=1'
   );
-  if (!Array.isArray(member) || !member[0]?.active || !['admin', 'vendedor'].includes(member[0].role)) {
+  if (!Array.isArray(member) || !member[0]?.active || !allowedRoles.includes(member[0].role)) {
     throw Object.assign(new Error('Staff access not approved'), { statusCode: 403 });
   }
   return { member: member[0], authUser };
