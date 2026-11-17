@@ -22,8 +22,7 @@ function buscarItensPedido(numeroPedido) {
         '  I.PESO_BRUTO AS PESO_BRUTO_KG,',
         '  I.QTDE_PC AS QUANTIDADE_PECAS,',
         '  I.VUNIT_PC AS VALOR_UNITARIO_PECA,',
-        '  I.PESO_PC AS PESO_PECA,',
-        '  I.DT_PREV_ENTREGA AS DATA_PREVISTA_ITEM',
+        '  I.PESO_PC AS PESO_PECA'
         'FROM ARQES15 I',
         'WHERE I.PEDIDO = ?',
         'ORDER BY I.ITEM',
@@ -46,7 +45,6 @@ function buscarItensPedido(numeroPedido) {
           quantidadePecas: item.QUANTIDADE_PECAS,
           valorUnitarioPeca: item.VALOR_UNITARIO_PECA,
           pesoPorPeca: item.PESO_PECA,
-          dataPrevistaItem: item.DATA_PREVISTA_ITEM,
         })));
       });
     });
