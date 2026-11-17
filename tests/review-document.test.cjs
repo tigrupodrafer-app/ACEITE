@@ -31,7 +31,7 @@ function ev(method = 'POST', body = { draftId: orderId }, auth = true) {
   return { httpMethod: method, headers: auth ? { authorization: 'Bearer token-test' } : {},
     body: JSON.stringify(body), queryStringParameters: { draftId: orderId } };
 }
-function setup({ role = 'admin', status = 'rascunho', existing = [], tamper = false } = {}) {
+function setup({ role = 'admin', status = 'rascunho', existing = [], tamper = false, grants = [] } = {}) {
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'mock-service-key';
   const state = { stored: null, inserted: null, audit: null, tokens: 0 };
   global.fetch = async (url, options = {}) => {
@@ -39,6 +39,7 @@ function setup({ role = 'admin', status = 'rascunho', existing = [], tamper = fa
     if (url.includes('/auth/v1/user')) return json({ id: userId });
     if (url.includes('/rest/v1/aceite_members')) return json([{ user_id: userId, active: true, role }]);
     if (url.includes('/rest/v1/aceite_orders')) return json([{ ...order, status }]);
+    if (url.includes('/rest/v1/aceite_approval_authorizers')) return json(grants.map(scope => ({ scope })));
     if (url.includes('/rest/v1/aceite_generated_documents')) {
       if (options.method === 'POST') {
         state.inserted = JSON.parse(options.body);
@@ -104,6 +105,29 @@ test('creates immutable draft PDF with hash and no signing tokens', async () => 
   assert.equal(state.tokens, 0);
   assert.equal(JSON.parse(result.body).signingEnabled, false);
 });
+test('appointed approver may read own company PDF but never generate or modify it', async () => {
+  const hash = createHash('sha256').update('PDF').digest('hex');
+  const state=setup({ role:'aprovador', grants:['comercial'], existing:[{
+    id:'33333333-3333-4333-8333-333333333333',version:1,file_sha256:hash,
+    storage_path:'reviews/'+orderId+'/v1-11111111-1111-4111-8111-111111111111.pdf',
+    created_at:'2026-11-17T10:00:00Z',
+  }]});
+  const get=ev('GET');
+  get.queryStringParameters.download='1';
+  const downloaded=await handler(get);
+  assert.equal(downloaded.statusCode,200);
+  assert.equal(Buffer.from(downloaded.body,'base64').toString(),'PDF');
+  const noWrite=await handler(ev());
+  assert.equal(noWrite.statusCode,403);
+  assert.equal(state.stored,null);
+});
+test('unappointed approver cannot download another company document', async () => {
+  setup({role:'aprovador',grants:[]});
+  const get=ev('GET');get.queryStringParameters.download='1';
+  const out=await handler(get);
+  assert.equal(out.statusCode,403);
+});
+
 test('existing document is reused rather than overwritten', async () => {
   const state = setup({ existing: [{ id: '33333333-3333-4333-8333-333333333333',
     version: 1, file_sha256: 'a'.repeat(64), storage_path: 'reviews/' + orderId + '/v1-11111111-1111-4111-8111-111111111111.pdf',
