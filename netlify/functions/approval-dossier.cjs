@@ -3,7 +3,7 @@
 const {createHash,randomUUID}=require('node:crypto');
 const {jsPDF}=require('jspdf');
 const {respond,requireStaff,supabaseFetch,getSecretConfig,handleError}=require('./_lib/backend.cjs');
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const HASH=/^[0-9a-f]{64}$/;
 const TABLE='/rest/v1/aceite_approval_dossiers';
 const invalid=(message,statusCode=409)=>Object.assign(new Error(message),{statusCode});
