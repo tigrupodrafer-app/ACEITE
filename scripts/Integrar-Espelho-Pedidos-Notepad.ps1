@@ -39,8 +39,8 @@ try {
   if(-not $source.Contains($anchor) -or -not $source.Contains($point) -or -not $source.Contains($oldMerge)){
    throw 'Rota atual difere da versao auditada; nenhuma substituicao automatica realizada.'
   }
-  if($source.Split($anchor).Count -ne 2 -or $source.Split($point).Count -ne 2){
-   throw 'Marcadores da rota duplicados; nenhuma alteracao realizada.'
+  if(([regex]::Matches($source,[regex]::Escape($anchor))).Count -ne 1 -or`n     ([regex]::Matches($source,[regex]::Escape($point))).Count -ne 1 -or`n     ([regex]::Matches($source,[regex]::Escape($oldMerge))).Count -ne 1){
+   throw 'Marcador ausente ou realmente duplicado na rota. Nenhuma alteracao realizada.'
   }
   $nl=[Environment]::NewLine
   $newImports=$anchor+$nl+"const { buscarEspelhoComplementar } = require('../services/espelhoService');"+$nl+"const { mergePedidoEspelho } = require('../services/espelhoMerge');"
