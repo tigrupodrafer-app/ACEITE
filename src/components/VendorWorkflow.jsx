@@ -1,10 +1,12 @@
 import React,{useEffect,useState} from 'react';
+import printCalc from '@/lib/sicPrintTotals.cjs';
+const {totalsForPrint,itemWeight}=printCalc;
 import {apiGet,apiPost} from '@/lib/apiClient';
 import {Search,Loader2,Printer,RefreshCw,FileText,LockKeyhole,Copy,MessageCircle,ShieldCheck} from 'lucide-react';
 
 const brl=v=>v===null||v===undefined||v===''?'—':Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const num=(v,precision=3)=>v===null||v===undefined||v===''?'—':Number(v).toLocaleString('pt-BR',{maximumFractionDigits:precision});
-const field=x=>x===null||x===undefined||String(x).trim()===''?'Não informado pelo SIC':String(x);
+const field=x=>x===null||x===undefined||String(x).trim()===''?'—':String(x);
 const date=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?String(v):new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeZone:'America/Sao_Paulo'}).format(d)};
 const simpleStatus={nao_registrado:'Aceite ainda não gerado',rascunho:'Pedido em rascunho',link_ativo:'Aguardando assinatura',assinado:'Aceite assinado',pendente:'Pendente'};
 function ItemTable({items}){
@@ -14,7 +16,7 @@ function ItemTable({items}){
     <td className="p-1">{field(item.codigoProdutoImpressao??item.codigoImpressao)}</td>
     <td className="p-1">{field(item.descricao)}</td>
     <td className="p-1">{field(item.unidade)}</td>
-    <td className="p-1 text-right">{num(item.pesoLiquidoKg??item.quantidade)}</td>
+    <td className="p-1 text-right">{num(itemWeight(item))}</td>
     <td className="p-1 text-right">{num(item.quantidadePecas)}</td>
     <td className="p-1 text-right">{num(item.valorUnitarioPeca??item.valorUnitario)}</td>
     <td className="p-1 text-right">{brl(item.valorTotal)}</td>
@@ -23,7 +25,7 @@ function ItemTable({items}){
 }
 function LabelValue({label,value}){return <div className="min-w-0"><strong>{label}:</strong> {field(value)}</div>}
 function PrintedOrder({order,items}){
- const c=order.cliente||{}, totals=order.valores||{};
+ const c=order.cliente||{}, totals=order.valores||{},summary=totalsForPrint(items);
  const seller=order.vendedor||order.codigoVendedor;
  const payment=order.condicaoPagamento||order.condicoesPagamento;
  return <article className="bg-white border-2 border-slate-700 text-slate-950 font-[Arial] print:shadow-none print:border-black" aria-label="Espelho de impressão do pedido SIC">
@@ -49,8 +51,8 @@ function PrintedOrder({order,items}){
   </div>
   <div className="p-2 pt-12 sm:pt-20 min-h-[260px] sm:min-h-[360px]"><ItemTable items={items}/></div>
   <div className="border-t-2 border-black px-2 py-2 grid grid-cols-2 md:grid-cols-6 gap-1 text-[12px] sm:text-sm">
-   <span><b>Tot. Qtde:</b> {num(items.reduce((n,i)=>n+Number(i.quantidadePecas||0),0),2)}</span>
-   <span><b>Tot. Qtde KG:</b> {num(items.reduce((n,i)=>n+Number(i.pesoLiquidoKg||0),0))} KG</span>
+   <span><b>Tot. Qtde:</b> {summary.quantityGroups.length?summary.quantityGroups.map(g=>num(g.quantity,2)+' '+g.unit).join(' + '):'—'}</span>
+   <span><b>Tot. Qtde KG:</b> {summary.weightKg===null?'—':num(summary.weightKg)+' KG'}</span>
    <span><b>Frete:</b> {brl(totals.frete)}</span>
    <span><b>Itens:</b> {brl(totals.subtotal)}</span>
    <span><b>Desconto:</b> {brl(totals.desconto)}</span>
@@ -118,7 +120,7 @@ export default function VendorWorkflow(){
   return()=>{active=false;window.clearInterval(timer)};
  },[request?.requestId,request?.status]);
  const items=order?.itens||[];
- const different=items.some(i=>i.codigoProdutoImpressao==null);
+ const different=items.some(i=>i.codigoProdutoImpressao==null&&i.codigoImpressao==null);
  return <section className="space-y-5">
   <div className="bg-white p-5 border rounded-lg space-y-3 print:hidden">
    <h2 className="font-bold text-xl">Consultar pedido e gerar aceite</h2>
@@ -133,10 +135,11 @@ export default function VendorWorkflow(){
   </div>
   {order&&<>
    <PrintedOrder order={order.pedidoCompleto} items={items}/>
+   {!totalsForPrint(items).weightComplete&&<p role="status" className="print:hidden bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-900">Há itens sem unidade de peso homologada. O total em KG não inclui produtos contabilizados apenas em unidades; confira o relatório SIC antes da emissão.</p>}
    <div className="print:hidden bg-white border rounded p-4 space-y-3">
     <h3 className="font-bold">Conferência antes de gerar aceite</h3>
     {different&&<p className="text-sm bg-amber-50 border border-amber-200 rounded p-3 text-amber-900">
-     O SIC ainda não fornece o código da coluna de impressão nesta integração. Para o pedido 352488, a impressão mostra 3847, enquanto o cadastro integrado retorna código interno 1379 e comercial 2506. Não utilize a prévia como documento final até ajustar o mapeamento.
+     A integração ainda não informa o código usado na impressão do SIC para este pedido. Não substituímos pelo código interno ou comercial, pois podem ser diferentes. A emissão definitiva continua bloqueada até homologar esse mapeamento.
     </p>}
     <div className="flex flex-wrap gap-2">
      <button type="button" onClick={()=>window.print()} className="border rounded px-3 py-2 inline-flex gap-2 items-center"><Printer className="w-4 h-4"/>Imprimir prévia</button>
