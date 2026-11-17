@@ -81,8 +81,10 @@ export async function exportAcceptanceDraft({ pedido, itens, validacao }) {
       ' (base de medida a confirmar no SIC) | Total: ' + brl(item.valorTotal));
     if (item.codigoProdutoSic != null) paragraph('Codigo SIC homologado: ' + normalize(item.codigoProdutoSic));
     if (item.referenciaFornecedor != null) paragraph('Referencia do fornecedor: ' + normalize(item.referenciaFornecedor));
-    if (item.quantidadeKg != null) paragraph('Quantidade em KG (campo mapeado): ' + normalize(item.quantidadeKg));
-    if (item.quantidadePecas != null) paragraph('Quantidade de pecas (campo mapeado): ' + normalize(item.quantidadePecas));
+    if (item.pesoLiquidoKg != null) paragraph('Peso liquido (ARQES15.PESO_LIQUIDO): ' + normalize(item.pesoLiquidoKg) + ' kg');
+    if (item.pesoBrutoKg != null) paragraph('Peso bruto (ARQES15.PESO_BRUTO): ' + normalize(item.pesoBrutoKg) + ' kg');
+    if (item.quantidadePecas != null) paragraph('Quantidade de pecas (ARQES15.QTDE_PC): ' + normalize(item.quantidadePecas));
+    if (item.valorUnitarioPeca != null) paragraph('Valor unitario/peca (ARQES15.VUNIT_PC): ' + brl(item.valorUnitarioPeca));
   });
   paragraph('Subtotal: ' + brl(pedido.valores?.subtotal));
   paragraph('Desconto: ' + brl(pedido.valores?.desconto));
