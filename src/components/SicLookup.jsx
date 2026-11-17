@@ -124,12 +124,12 @@ export default function SicLookup() {
     }
   }
 
-  async function prepareReviewDocument() {
+  async function prepareReviewDocument(newVersion = false) {
     if (!savedDraft?.draftId || preparingReview) return;
     setPreparingReview(true);
     setError('');
     try {
-      const doc = await apiPost('/.netlify/functions/review-document', { draftId: savedDraft.draftId });
+      const doc = await apiPost('/.netlify/functions/review-document', { draftId: savedDraft.draftId, newVersion });
       setReviewDocument(doc);
     } catch (e) {
       setError(e.message || 'Falha na preparação do documento de revisão.');
@@ -374,7 +374,7 @@ export default function SicLookup() {
                 <div className="rounded-md border border-slate-200 bg-white p-4 space-y-3">
                   <p className="font-semibold text-slate-900">Documento preliminar versionado</p>
                   <p className="text-sm text-slate-600">
-                    A cópia arquivada será gerada no servidor e guardada em área privada, com SHA-256
+                    A cópia arquivada será gerada no servidor com as 11 seções do termo original e os diagramas, guardada em área privada, com SHA-256
                     para conferência de integridade. Não é um termo aprovado nem pode ser assinada.
                   </p>
                   {reviewDocument && (
@@ -386,10 +386,17 @@ export default function SicLookup() {
                   )}
                   <div className="flex flex-wrap gap-2">
                     <Button type="button" variant="outline" disabled={preparingReview || !!reviewDocument}
-                      onClick={prepareReviewDocument} className="gap-2">
+                      onClick={() => prepareReviewDocument(false)} className="gap-2">
                       {preparingReview ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
                       {reviewDocument ? 'PDF de revisão arquivado' : 'Gerar PDF versionado para revisão'}
                     </Button>
+                    {reviewDocument && (
+                      <Button type="button" variant="outline" disabled={preparingReview || reviewDocument.version >= 20}
+                        onClick={() => prepareReviewDocument(true)} className="gap-2">
+                        {preparingReview ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                        Gerar nova versão para revisão
+                      </Button>
+                    )}
                     {reviewDocument && (
                       <Button type="button" variant="outline" disabled={downloadingReview}
                         onClick={downloadReviewDocument} className="gap-2">
