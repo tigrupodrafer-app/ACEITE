@@ -36,7 +36,7 @@ export default function Login() {
         <div className="flex items-center gap-3 mb-6">
           <ShieldCheck className="text-red-700 h-10 w-10" />
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">DRAFER ACEITE</h1>
+            <h1 className="text-2xl font-bold text-slate-900">ACEITE DRAFER</h1>
             <p className="text-sm text-slate-500">Acesso administrativo seguro</p>
           </div>
         </div>
@@ -59,7 +59,7 @@ export default function Login() {
           Entrar com Google
         </button>
         <p className="text-xs text-slate-500 mt-6">
-          O login não concede acesso automaticamente. Usuários devem ser autorizados no DRAFER ACEITE.
+          O login não concede acesso automaticamente. Usuários devem ser autorizados no ACEITE DRAFER.
         </p>
       </section>
     </main>
