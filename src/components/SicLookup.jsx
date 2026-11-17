@@ -60,6 +60,8 @@ export default function SicLookup() {
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
   const [draftExporting, setDraftExporting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [savedDraft, setSavedDraft] = useState(null);
 
   async function refresh(id) {
     try {
@@ -78,6 +80,7 @@ export default function SicLookup() {
     event.preventDefault();
     setError('');
     setState(null);
+    setSavedDraft(null);
     setRequestId('');
     if (!/^[1-9]\d{0,11}$/.test(orderNumber)) {
       setError('Informe apenas um número de pedido válido.');
@@ -102,6 +105,20 @@ export default function SicLookup() {
   // Situacao "0" is not interpreted as legally eligible without a confirmed SIC mapping.
   const juridicalApproved = false;
   const canGenerateAcceptance = financialOk && sicReleased && juridicalApproved;
+
+  async function saveInternalDraft() {
+    if (!requestId || state?.status !== 'completed' || savingDraft) return;
+    setSavingDraft(true);
+    setError('');
+    try {
+      const saved = await apiPost('/.netlify/functions/acceptance-draft', { requestId });
+      setSavedDraft(saved);
+    } catch (e) {
+      setError(e.message || 'Falha ao registrar rascunho interno.');
+    } finally {
+      setSavingDraft(false);
+    }
+  }
 
   async function downloadDraft() {
     if (!pedido || draftExporting) return;
@@ -313,7 +330,19 @@ export default function SicLookup() {
                 A situação SIC é apresentada em seu código original, sem presumir elegibilidade jurídica.
                 O aceite e a assinatura só serão liberados após homologação das regras e do termo.
               </p>
+              {savedDraft && (
+                <div role="status" className="border border-emerald-200 bg-emerald-50 p-3 rounded-md text-sm text-emerald-900">
+                  <strong>Rascunho interno:</strong> {savedDraft.message}
+                  <p className="mt-1 text-xs">Identificação: {savedDraft.draftId} · Status: {savedDraft.status}</p>
+                </div>
+              )}
               <div className="flex flex-wrap gap-3">
+                <Button type="button" onClick={saveInternalDraft}
+                  disabled={savingDraft || !!savedDraft || !requestId || state?.status !== 'completed' || !financialOk || !sicReleased}
+                  className="gap-2">
+                  {savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
+                  {savedDraft ? 'Rascunho registrado' : 'Registrar rascunho interno'}
+                </Button>
                 <Button type="button" variant="outline" onClick={downloadSnapshot} disabled={exporting} className="gap-2 bg-white">
                   {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                   Baixar espelho da consulta (PDF)
@@ -330,7 +359,7 @@ export default function SicLookup() {
                 </Button>
               </div>
               <p className="text-xs text-amber-900">
-                O espelho e a minuta PDF são apenas para conferência interna. A minuta não pode ser enviada ao cliente nem utilizada para assinatura.
+                O registro do rascunho é restrito à equipe autenticada, não gera link público e não autoriza fabricação. O espelho e a minuta PDF são apenas para conferência interna. A minuta não pode ser enviada ao cliente nem utilizada para assinatura.
               </p>
             </section>
           </div>
