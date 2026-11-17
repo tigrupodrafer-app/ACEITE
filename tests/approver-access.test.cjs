@@ -17,7 +17,8 @@ test('approver access is limited and does not inherit staff-wide endpoints',()=>
   assert.match(app,/user\?\.role === 'aprovador'/);
   assert.match(app,/<ApproverHome \/>/);
   const home=read('src/pages/ApproverHome.jsx');
-  assert.doesNotMatch(home,/apiGet|SicLookup|OrdersTable|import\s+Dashboard/);
+  assert.match(home,/apiGet\('\/\.netlify\/functions\/approval-queue'\)/);
+  assert.doesNotMatch(home,/SicLookup|OrdersTable|import\s+Dashboard|\/\.netlify\/functions\/sic-/);
 });
 test('access-restricted screen is translated into Portuguese',()=>{
   const page=read('src/components/UserNotRegisteredError.jsx');
