@@ -11,7 +11,7 @@ function mergePedidoEspelho(pedido, espelho){
  const extra={};
  for(const key of ['codigoVendedor','tabelaPreco','tipoVendaCodigo','codigoCliente',
   'codigoCidadeCliente','codigoCondicaoPagamentoCadastral','codigoRegiaoCliente',
-  'codigoEnderecoEntrega','frete']){
+  'codigoEnderecoEntrega','frete','nomeEmpresa','usuarioPedidoSic','usuarioInclusaoSic']){
   if(espelho[key]!==undefined&&espelho[key]!==null&&espelho[key]!=='')extra[key]=espelho[key];
  }
  return {...pedido,...extra,cliente,
