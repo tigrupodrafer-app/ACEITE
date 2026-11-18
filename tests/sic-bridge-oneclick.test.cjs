@@ -9,7 +9,8 @@ test('inicializador apenas abre ponte SIC, sem reiniciar API ou expor token',()=
  assert.match(ps,/api\/health/);
  assert.match(ps,/ACEITE-Ponte-Worker\.ps1/);
  assert.match(ps,/ConvertFrom-SecureString/);
- assert.match(ps,/Read-Host .* -AsSecureString/);
+ assert.match(ps,/Start-Process -FilePath notepad\.exe .* -Wait/);
+ assert.match(ps,/ConvertTo-SecureString -String \$plain -AsPlainText -Force/);
  assert.match(ps,/git hash-object/);
  assert.match(ps,/Start-Process -FilePath \$psExe/);
  assert.match(ps,/Start-Process -FilePath notepad\.exe/);
@@ -25,8 +26,8 @@ test('worker so decripta DPAPI na conta local, nao transmite senha em argumento'
 });
 test('BAT consulta commit fixo e hash do instalador e executa localmente',()=>{
  const bat=read('scripts/INICIAR-PONTE-ACEITE.bat');
- assert.match(bat,/704543489baebc4625b1cf39ffb9af9e3b39f049/);
- assert.match(bat,/1957093bbdae2094faf24f66142cba89dd68c881/);
+ assert.match(bat,/15eda7de08673069424f51cdad2df07f74512289/);
+ assert.match(bat,/c2908e673d7f47b798c46787e4e445dda97cb098/);
  assert.match(bat,/git hash-object/);
  assert.match(bat,/powershell\.exe -NoProfile/);
 });
