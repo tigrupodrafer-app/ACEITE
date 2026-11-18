@@ -4,7 +4,10 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const service=fs.readFileSync(path.join(__dirname,'../server-patches/espelhoService.js'),'utf8');
-const merge=require('../server-patches/espelhoMerge.js');
+const vm=require('node:vm');
+const moduleShim={exports:{}};
+vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../server-patches/espelhoMerge.js'),'utf8'),{module:moduleShim});
+const merge=moduleShim.exports;
 const install=fs.readFileSync(path.join(__dirname,'../scripts/Instalar-Espelho-V2-Notepad.ps1'),'utf8');
 test('SIC enrichment reads two verified relations with parameterized queries',()=>{
  assert.match(service,/FROM EMPRESA WHERE COD_EMPRESA=\?/);
