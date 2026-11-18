@@ -67,7 +67,9 @@ test('interface do vendedor tem espelho, termo e acao de verificar',()=>{
  assert.match(c,/Qtde. KG/);
  assert.match(c,/Qtde. PC/);
  assert.match(c,/WhatsApp/);
- assert.match(c,/código usado na impressão/);
+ assert.match(c,/código de impressão não foi retornado pelo SIC/);
+ assert.match(c,/código interno é exibido apenas como referência técnica/);
+ assert.match(c,/A divergência do ERP foi registrada e sua investigação foi encerrada/);
  assert.doesNotMatch(c,/FormalApproval|ApprovalDossier|aceite_demo_flows/);
 });
 after(()=>{
