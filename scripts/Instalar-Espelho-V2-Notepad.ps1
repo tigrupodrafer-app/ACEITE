@@ -80,7 +80,8 @@ try{
  $lines.Add('Os valores reais de empresa e cidade dependem do registro unico no Firebird.')
  $lines.Add('Nenhuma chave, senha ou dado pessoal incluido neste relatorio.')
 }catch{
- foreach($b in ($backupFiles | Select-Object -Reverse)){
+ [array]::Reverse($backupFiles)
+ foreach($b in $backupFiles){
   if(Test-Path -LiteralPath $b.Backup){Copy-Item -LiteralPath $b.Backup -Destination $b.Original -Force -ErrorAction SilentlyContinue}
  }
  $lines.Add('STATUS: INSTALACAO INTERROMPIDA. Backups restaurados quando necessarios.')
