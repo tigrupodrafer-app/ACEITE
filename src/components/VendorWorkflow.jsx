@@ -9,6 +9,8 @@ const brl=v=>v===null||v===undefined||v===''?'—':Number(v).toLocaleString('pt-
 const num=(v,precision=3)=>v===null||v===undefined||v===''?'—':Number(v).toLocaleString('pt-BR',{maximumFractionDigits:precision});
 const field=x=>x===null||x===undefined||String(x).trim()===''?'—':String(x);
 const date=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?String(v):new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeZone:'America/Sao_Paulo'}).format(d)};
+const printCode=item=>item.codigoProdutoImpressao??item.codigoImpressao;
+const internalCode=item=>item.codigoProdutoInterno??item.codigoProduto;
 const simpleStatus={nao_registrado:'Aceite ainda não gerado',rascunho:'Pedido em rascunho',link_ativo:'Aguardando assinatura',assinado:'Aceite assinado',pendente:'Pendente'};
 function ItemTable({items}){
  return <div>
@@ -16,7 +18,8 @@ function ItemTable({items}){
    {items.map((item,i)=><article key={i} className="border rounded-md p-3 space-y-2 text-sm">
     <p className="font-semibold">{field(item.descricao)}</p>
     <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-     <p><strong>Código:</strong> {field(item.codigoProdutoImpressao??item.codigoImpressao)}</p>
+     <p><strong>Cód. impressão:</strong> {field(printCode(item))}</p>
+     <p><strong>Cód. interno:</strong> {field(internalCode(item))}</p>
      <p><strong>Unidade:</strong> {field(item.unidade)}</p>
      <p><strong>Qtde. KG:</strong> {num(itemWeight(item))}</p>
      <p><strong>Qtde. PC:</strong> {num(item.quantidadePecas)}</p>
@@ -25,10 +28,11 @@ function ItemTable({items}){
     </div>
    </article>)}
   </div>
-  <div className="hidden sm:block print:block overflow-x-auto"><table className="w-full min-w-[810px] text-[13px] border-collapse">
-  <thead><tr className="border-b border-black">{['Código','Descrição','Unid.','Qtde. KG','Qtde. PC','Vr. Unit.','Valor Total'].map(h=><th key={h} className="py-2 px-1 font-normal text-left">{h}</th>)}</tr></thead>
+  <div className="hidden sm:block print:block overflow-x-auto"><table className="w-full min-w-[890px] text-[13px] border-collapse">
+  <thead><tr className="border-b border-black">{['Cód. impressão','Cód. interno','Descrição','Unid.','Qtde. KG','Qtde. PC','Vr. Unit.','Valor Total'].map(h=><th key={h} className="py-2 px-1 font-normal text-left">{h}</th>)}</tr></thead>
   <tbody>{items.map((item,i)=><tr key={i} className="align-top">
-    <td className="p-1">{field(item.codigoProdutoImpressao??item.codigoImpressao)}</td>
+    <td className="p-1">{field(printCode(item))}</td>
+    <td className="p-1">{field(internalCode(item))}</td>
     <td className="p-1">{field(item.descricao)}</td>
     <td className="p-1">{field(item.unidade)}</td>
     <td className="p-1 text-right">{num(itemWeight(item))}</td>
@@ -220,7 +224,7 @@ export default function VendorWorkflow(){
  },[request?.requestId,request?.status]);
  const closeError=()=>{setLoadingPhase(null);setLoadingError('');setRequest(null);querySequence.current++;};
  const items=order?.itens||[];
- const different=items.some(i=>i.codigoProdutoImpressao==null&&i.codigoImpressao==null);
+ const missingPrintCode=items.some(i=>printCode(i)==null);
  return <section className="space-y-5">
   <OrderLoadingModal open={Boolean(loadingPhase)} phase={loadingPhase} orderNumber={number}
    elapsed={elapsed} error={loadingError} onClose={closeError}/>
@@ -240,8 +244,8 @@ export default function VendorWorkflow(){
    {!totalsForPrint(items).weightComplete&&<p role="status" className="print:hidden bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-900">Há itens sem unidade de peso homologada. O total em KG não inclui produtos contabilizados apenas em unidades; confira o relatório SIC antes da emissão.</p>}
    <div className="print:hidden bg-white border rounded p-4 space-y-3">
     <h3 className="font-bold">Conferência antes de gerar aceite</h3>
-    {different&&<p className="text-sm bg-amber-50 border border-amber-200 rounded p-3 text-amber-900">
-     A integração ainda não informa o código usado na impressão do SIC para este pedido. Não substituímos pelo código interno ou comercial, pois podem ser diferentes. A emissão definitiva continua bloqueada até homologar esse mapeamento.
+    {missingPrintCode&&<p className="text-sm bg-slate-50 border border-slate-200 rounded p-3 text-slate-700">
+     O código de impressão não foi retornado pelo SIC para um ou mais itens. O código interno é exibido apenas como referência técnica, sem substituir o código impresso. A divergência do ERP foi registrada e sua investigação foi encerrada por decisão de escopo.
     </p>}
     <div className="flex flex-wrap gap-2">
      <button type="button" onClick={()=>window.print()} className="border rounded px-3 py-2 inline-flex gap-2 items-center"><Printer className="w-4 h-4"/>Imprimir prévia</button>
@@ -252,7 +256,7 @@ export default function VendorWorkflow(){
     </div>
     <div className="border-t pt-3 space-y-2">
      <h4 className="font-semibold">Gerar e compartilhar aceite</h4>
-     <p className="text-sm text-amber-900">Emissão e link público ainda bloqueados enquanto faltarem os dados de impressão no conector SIC e a homologação do texto definitivo do termo. O fluxo não exige aprovação individual por pedido.</p>
+     <p className="text-sm text-amber-900">Emissão e link público permanecem bloqueados até a homologação do termo jurídico e das regras de negócio e segurança. A divergência do código de impressão no SIC não será investigada nesta etapa. O fluxo não exige aprovação individual por pedido.</p>
      <div className="flex flex-wrap gap-2">
       <button type="button" disabled className="bg-slate-300 text-slate-700 rounded px-4 py-2 inline-flex gap-2 items-center"><FileText className="w-4 h-4"/>Gerar aceite</button>
       <button type="button" disabled className="border rounded px-4 py-2 inline-flex gap-2 items-center"><Copy className="w-4 h-4"/>Copiar link</button>
