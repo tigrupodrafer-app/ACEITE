@@ -28,6 +28,7 @@ try{
 }catch{Add 'Health status: SEM RESPOSTA'}
 Add ''
 Add '=== 2. PROCESSOS DA PONTE ==='
+$workers=@()
 try{
  $ps=@(Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='pwsh.exe'" -ErrorAction Stop)
  $workers=@($ps | Where-Object { $_.CommandLine -match '(?i)(?:ACEITE-Ponte-Worker|SIC-Bridge)\.ps1' })
@@ -83,6 +84,7 @@ try{
 Add 'IMPORTANTE: NENHUMA chamada autenticada foi feita; fila nao foi consumida.'
 Add ''
 Add '=== 6. LOGS DO WORKER - APENAS CONTAGENS E CATEGORIAS ==='
+$logs=@()
 try{
  $logs=@(Get-ChildItem -LiteralPath $dir -File -Filter 'sic-bridge-*.log' -ErrorAction SilentlyContinue |
    Sort-Object LastWriteTime -Descending | Select-Object -First 3)
