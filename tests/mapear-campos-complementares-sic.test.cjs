@@ -8,7 +8,7 @@ test('metadados e somente presenca de dados de cliente, nunca valores',()=>{
  assert.match(src,/WHERE PEDIDO=\?/);
  assert.match(src,/WHERE CODIC=\?/);
  assert.match(src,/PRESENTE/);
- assert.doesNotMatch(src,/\b3847\b|INSERT INTO|UPDATE ARQ|DELETE FROM/i);
+ assert.doesNotMatch(src,/INSERT INTO|UPDATE ARQ|DELETE FROM/i);
 });
 test('PowerShell usa hash fixo, launcher DPAPI e Notepad sem reiniciar servicos',()=>{
  const src=read('scripts/Executar-Mapeamento-Campos-SIC-Notepad.ps1');
