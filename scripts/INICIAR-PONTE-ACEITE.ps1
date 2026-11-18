@@ -47,21 +47,43 @@ try{
   }
   if($Reconfigurar -or -not(Test-Path -LiteralPath $secretFile)){
    Write-Host ''
-   Write-Host 'PRIMEIRA CONFIGURACAO DA PONTE SIC' -ForegroundColor Yellow
-   Write-Host 'Use o MESMO SIC_BRIDGE_TOKEN configurado nas variaveis do site Netlify.' -ForegroundColor Yellow
-   Write-Host 'Se voce nao conhece o token, pare aqui e configure um novo nos DOIS lados.' -ForegroundColor Yellow
-   $secure=Read-Host 'Cole o SIC_BRIDGE_TOKEN (entrada oculta)' -AsSecureString
-   $ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
-   try{$plain=[Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)}
-   finally{[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)}
+   Write-Host 'CONFIGURACAO DO TOKEN DA PONTE SIC NO BLOCO DE NOTAS' -ForegroundColor Yellow
+   Write-Host 'Cole exatamente o mesmo SIC_BRIDGE_TOKEN configurado no ambiente da Netlify.' -ForegroundColor Yellow
+   Write-Host 'O token fica temporariamente em TXT: SALVE e FECHE o Notepad para continuar.' -ForegroundColor Yellow
+   Write-Host 'O TXT sera excluido apos criptografia DPAPI. Nao compartilhe esse arquivo.' -ForegroundColor Yellow
+   $plainFile=Join-Path $cfgDir ('TOKEN-TEMPORARIO-'+[guid]::NewGuid().ToString('N')+'.txt')
+   $secure=$null
+   $plain=$null
    try{
-    if($plain.Length -lt 32){throw 'Token muito curto; exige pelo menos 32 caracteres.'}
-    $encoded=$secure | ConvertFrom-SecureString
-    [IO.File]::WriteAllText($secretFile,$encoded,(New-Object Text.UTF8Encoding($false)))
+    [IO.File]::WriteAllText($plainFile,'',(New-Object System.Text.UTF8Encoding($false)))
+    # Sem heranca: so a identidade Windows corrente tem permissao no TXT.
+    $acl=New-Object System.Security.AccessControl.FileSecurity
+    $acl.SetAccessRuleProtection($true,$false)
+    $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User
+    $rule=New-Object System.Security.AccessControl.FileSystemAccessRule($sid,'FullControl','Allow')
+    $acl.AddAccessRule($rule)
+    Set-Acl -LiteralPath $plainFile -AclObject $acl -ErrorAction Stop
+    Start-Process -FilePath notepad.exe -ArgumentList @($plainFile) -Wait
+    $plain=[IO.File]::ReadAllText($plainFile,[Text.Encoding]::UTF8).TrimEnd([char[]]@([char]13,[char]10))
+    if([string]::IsNullOrWhiteSpace($plain) -or $plain.Length -lt 32 -or $plain.Length -gt 4096 -or $plain.Contains([char]10) -or $plain.Contains([char]13)){
+     throw 'Token ausente/incompleto ou com mais de uma linha. Use um unico token de pelo menos 32 caracteres.'
+    }
+    $secure=ConvertTo-SecureString -String $plain -AsPlainText -Force
+    $encoded=ConvertFrom-SecureString -SecureString $secure
+    $encryptedTemp=Join-Path $cfgDir ('ponte-dpapi-'+[guid]::NewGuid().ToString('N')+'.tmp')
+    try{
+     [IO.File]::WriteAllText($encryptedTemp,$encoded,(New-Object System.Text.UTF8Encoding($false)))
+     $testSecure=Get-Content -LiteralPath $encryptedTemp -Raw | ConvertTo-SecureString
+     $testSecure.Dispose()
+     Move-Item -LiteralPath $encryptedTemp -Destination $secretFile -Force -ErrorAction Stop
+    }finally{Remove-Item -LiteralPath $encryptedTemp -Force -ErrorAction SilentlyContinue}
    }finally{
     $plain=$null
     $encoded=$null
-    $secure.Dispose()
+    if($null -ne $secure){$secure.Dispose()}
+    if(Test-Path -LiteralPath $plainFile){
+     Remove-Item -LiteralPath $plainFile -Force -ErrorAction SilentlyContinue
+    }
    }
    $lines.Add('Token protegido por DPAPI no perfil da conta Windows (valor omitido).')
   }else{$lines.Add('Token protegido existente foi reutilizado (valor omitido).')}
