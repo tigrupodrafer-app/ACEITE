@@ -47,13 +47,14 @@ function PrintedOrder({order,items}){
  const c=order.cliente||{}, totals=order.valores||{},summary=totalsForPrint(items);
  const seller=order.vendedor||order.codigoVendedor;
  const payment=order.condicaoPagamento||order.condicoesPagamento;
+ const paymentKnown=payment!==null&&payment!==undefined&&String(payment).trim()!=='';
  return <article className="bg-white border-2 border-slate-700 text-slate-950 font-[Arial] print:shadow-none print:border-black" aria-label="Espelho de impressão do pedido SIC">
   <header className="border-b-2 border-black p-2">
    <div className="grid md:grid-cols-3 gap-2 items-start">
     <div><h2 className="font-bold text-lg sm:text-2xl leading-none">{field(order.nomeEmpresa||order.razaoSocialEmpresa||null)}</h2>
      <p className="text-sm sm:text-lg mt-2">FONE: {field(order.telefoneEmpresa)}</p></div>
     <div className="text-center">
-     <p className="text-sm sm:text-lg">{field(order.tipoVenda)}</p>
+     <p className="text-sm sm:text-lg">{field(order.tipoVenda||order.tipoVendaDescricao||order.tipoVendaCodigo)}</p>
      <h3 className="font-bold text-2xl sm:text-4xl mt-2">PEDIDO Nº {field(order.numero)}</h3>
     </div>
     <div className="md:text-right"><p>Pág: 1</p><p className="mt-4">Tabela: {field(order.tabelaPreco)}</p></div>
@@ -64,7 +65,7 @@ function PrintedOrder({order,items}){
    <div className="grid md:grid-cols-2 gap-2"><LabelValue label="Cliente" value={[c.codigo,c.nome].filter(Boolean).join(' — ')}/><LabelValue label="Fone" value={c.telefone||order.telefoneCliente}/></div>
    <div className="grid md:grid-cols-3 gap-2"><LabelValue label="CNPJ" value={c.cnpj||c.cpf||c.cnpjCpf||order.cnpjCpf}/><LabelValue label="Comprador" value={c.comprador||order.comprador}/><LabelValue label="Email" value={c.email||order.emailCliente}/></div>
    <div className="grid md:grid-cols-4 gap-2"><LabelValue label="Endereço" value={[c.endereco||order.endereco,c.numeroEndereco].filter(Boolean).join(', ')}/><LabelValue label="Cidade" value={c.cidade||order.cidade}/><LabelValue label="Estado" value={c.estado||order.estado}/><LabelValue label="Bairro / CEP" value={[c.bairro||order.bairro,c.cep||order.cep].filter(Boolean).join(' / ')}/></div>
-   <div className="grid md:grid-cols-2 gap-2"><LabelValue label="Forma cobrança" value={order.formaCobranca||order.formaPagamento}/><LabelValue label="Cond. Pagto" value={payment||order.codigoCondicaoPagamentoCadastral}/></div>
+   <div className="grid md:grid-cols-2 gap-2"><LabelValue label="Forma cobrança" value={order.formaCobranca||order.formaPagamento}/><LabelValue label={paymentKnown?"Cond. Pagto":"Cód. condição cadastral"} value={paymentKnown?payment:order.codigoCondicaoPagamentoCadastral}/></div>
    <LabelValue label="Local de Entrega" value={order.localEntrega||order.enderecoEntrega}/>
    <LabelValue label="Obs" value={order.observacoes||order.obs}/>
   </div>
