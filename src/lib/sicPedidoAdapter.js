@@ -35,10 +35,14 @@ export function adaptarPedidoSic(resposta) {
   const homologacao = p._espelhoHomologacao || {};
   const camposFaltantes = String(homologacao.faltam || '').trim();
   const pendencias = [];
+  if (!clean(p.numero) || !/^\d{1,12}$/.test(clean(p.numero))) pendencias.push('Número do pedido SIC ausente ou inválido.');
+  if (!clean(p.razaoSocialEmpresa || p.nomeEmpresa)) pendencias.push('Razão social da empresa não informada pelo SIC.');
   if (!clean(cliente.nome)) pendencias.push('Nome do cliente não cadastrado.');
   if (!clean(cliente.cnpjCpf)) pendencias.push('CPF/CNPJ ausente no cadastro SIC.');
   else if (!validarCpfCnpj(cliente.cnpjCpf)) pendencias.push('CPF/CNPJ inválido (dígitos verificadores).');
   if (!itens.length) pendencias.push('Pedido sem itens.');
+  if (p.enderecoEntregaConfirmado !== true) pendencias.push('Endereço de entrega não confirmado no SIC.');
+  if (clean(p.liberado).toUpperCase() !== 'S') pendencias.push('Pedido sem confirmação de liberação no SIC.');
   if (p.quantidadeItens != null && p.quantidadeItens !== itens.length) pendencias.push('Quantidade de itens divergente do cabeçalho SIC.');
   if (camposFaltantes && !/^(nenhum|nenhuma|nao|não|0|\[\])$/i.test(camposFaltantes)) {
     pendencias.push('Espelho SIC informa campos faltantes; conferir homologação.');
@@ -47,11 +51,12 @@ export function adaptarPedidoSic(resposta) {
       (Array.isArray(resposta.validacao.avisos) && resposta.validacao.avisos.length)) {
     pendencias.push('Validação financeira do SIC não aprovada.');
   }
-  if (![valores.subtotal, valores.desconto, valores.total].every(finite)) {
+  if (![valores.subtotal, valores.desconto, valores.total].every(finite) ||
+      valores.subtotal < 0 || valores.desconto < 0 || valores.total < 0) {
     pendencias.push('Valores comerciais ausentes ou inválidos.');
   }
   for (const [i, item] of itens.entries()) {
-    if (!clean(item.descricao) || !finite(item.quantidade) || item.quantidade <= 0 || !finite(item.valorUnitario) || !finite(item.valorTotal)) {
+    if (!clean(item.descricao) || !finite(item.quantidade) || item.quantidade <= 0 || !finite(item.valorUnitario) || !finite(item.valorTotal) || item.valorUnitario < 0 || item.valorTotal < 0) {
       pendencias.push('Item ' + (i + 1) + ' incompleto.');
     }
   }
