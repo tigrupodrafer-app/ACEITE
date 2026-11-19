@@ -1,6 +1,41 @@
 'use strict';
 const { respond, supabaseFetch, sha256, onlyMethod, handleError } = require('./_lib/backend.cjs');
 
+// Public mirror is served exclusively from a frozen, validated SIC snapshot.
+// Do not expose a raw snapshot: it can contain internal fields and unrelated PII.
+function sicMirror(order) {
+  if (order.origin !== 'SIC_SUPRASYS' || order.details?.draftOnly === true ||
+      order.details?.legalDocumentApproved !== true ||
+      order.details?.eligibilityApproved !== true) return null;
+  const snapshot = order.order_snapshot;
+  const p = snapshot?.pedidoCompleto;
+  const items = snapshot?.itens;
+  if (!p || !Array.isArray(items) || !items.length || items.length > 200 ||
+      snapshot.validacao?.valido !== true ||
+      String(p.numero) !== String(order.sic_order_number) ||
+      Number(p.empresa) !== Number(order.sic_company_id) ||
+      !items.every(x => x && typeof x.descricao === 'string' && Number.isFinite(Number(x.valorTotal)))) return null;
+  const scalar = v => typeof v === 'string' || typeof v === 'number' ? String(v).slice(0, 250) : null;
+  const money = v => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null;
+  const client = p.cliente || {};
+  return {
+    company: { name: scalar(p.nomeEmpresa || p.razaoSocialEmpresa), phone: scalar(p.telefoneEmpresa) },
+    order: { number: scalar(p.numero), saleType: scalar(p.tipoVenda || p.tipoVendaDescricao || p.tipoVendaCodigo),
+      date: scalar(p.dataPedido), deliveryDate: scalar(p.dataEntrega), seller: scalar(p.vendedor || p.codigoVendedor),
+      payment: scalar(p.condicaoPagamento || p.condicoesPagamento || p.codigoCondicaoPagamentoCadastral),
+      deliveryAddress: scalar(p.localEntrega || p.enderecoEntrega), notes: scalar(p.observacoes || p.obs) },
+    client: { name: scalar(client.nome), code: scalar(client.codigo), document: scalar(client.cnpj || client.cpf || client.cnpjCpf),
+      phone: scalar(client.telefone || p.telefoneCliente), address: scalar(client.endereco || p.endereco),
+      city: scalar(client.cidade || p.cidade), state: scalar(client.estado || p.estado), zip: scalar(client.cep || p.cep) },
+    items: items.map(x => ({ code: scalar(x.codigoProdutoImpressao || x.codigoImpressao || x.codigoProdutoComercial),
+      description: scalar(x.descricao), unit: scalar(x.unidade), quantity: money(x.quantidade),
+      pieces: money(x.quantidadePecas), weightKg: money(x.pesoLiquidoKg), unitPrice: money(x.valorUnitario),
+      unitPricePiece: money(x.valorUnitarioPeca), total: money(x.valorTotal) })),
+    totals: { subtotal: money(p.valores?.subtotal), discount: money(p.valores?.desconto),
+      freight: money(p.valores?.frete ?? p.frete), total: money(p.valores?.total) },
+  };
+}
+
 const expectedState = {
   1: 'aguardando_aceite_pedido',
   2: 'aguardando_aceite_entrega',
@@ -23,12 +58,13 @@ exports.handler = async (event) => {
       return respond(404, { error: 'Link inválido ou expirado' });
     }
     const orders = await supabaseFetch('/rest/v1/aceite_orders?id=eq.' + encodeURIComponent(item.order_id) +
-      '&select=id,order_number,client_name,status,details&limit=1');
+      '&select=id,order_number,client_name,status,details,origin,sic_company_id,sic_order_number,order_snapshot&limit=1');
     const order = orders?.[0];
     if (!order || order.status !== expectedState[item.level]) {
       return respond(404, { error: 'Aceite indisponível para este pedido' });
     }
     const d = order.details || {};
+    const mirror = sicMirror(order);
     // Whitelist public fields: never send document, address, contacts, hashes or financial snapshots.
     return respond(200, {
       order: {
@@ -40,6 +76,8 @@ exports.handler = async (event) => {
         quantity: typeof d.quantity === 'number' ? d.quantity : null,
         thickness: typeof d.thickness === 'string' ? d.thickness : '',
         level: item.level,
+        mirror,
+        mirrorComplete: mirror !== null,
       },
     });
   } catch (error) {
