@@ -37,19 +37,10 @@ exports.handler=async event=>{
    encodeURIComponent(legal.version)+'&content_sha256=eq.'+hash+
    '&status=eq.homologado&select=id&limit=1');
   if(approved?.length!==1)throw invalid('Registre primeiro a homologacao juridica da versao revisada');
-  const details={...o.details,draftOnly:false,eligibilityApproved:true,
-    legalDocumentApproved:true,mirrorComplete:true,legalVersion:legal.version,
-    legalSha256:hash,verifiedBy:authUser.id,verifiedAt:new Date().toISOString()};
-  const updated=await supabaseFetch('/rest/v1/aceite_orders?id=eq.'+o.id+
-   '&status=eq.rascunho&select=id,status',{
-    method:'PATCH',headers:{Prefer:'return=representation'},
-    body:{status:'aguardando_aceite_pedido',details}});
-  if(!updated?.[0]?.id)throw invalid('Pedido ja foi atualizado; consulte o estado atual');
-  await supabaseFetch('/rest/v1/aceite_audit_events',{method:'POST',body:{
-    order_id:o.id,actor_type:'usuario',actor_id:authUser.id,
-    action:'sic_mirror_verified_for_acceptance',metadata:{
-      legalVersion:legal.version,legalSha256:hash,
-      sourceRequestId:s.sourceRequestId,manualReview:true,externalERPWrite:false}}});
+  const result=await supabaseFetch('/rest/v1/rpc/aceite_ativar_pedido_atomico',{
+    method:'POST',body:{p_order_id:o.id,p_actor_id:authUser.id,
+      p_legal_version:legal.version,p_legal_sha256:hash}});
+  if(!result?.activated)throw invalid('Ativacao nao confirmada');
   return respond(200,{orderId:o.id,status:'aguardando_aceite_pedido',readyForLink:true});
  }catch(error){return handleError(error)}
 };
