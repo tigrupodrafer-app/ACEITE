@@ -5,8 +5,7 @@ import { AlertTriangle, ChevronDown, ChevronUp, FileText, Loader2 } from 'lucide
 
 
 
-// Independent public read-only page. Signing is intentionally disabled
-// until the transactional signature endpoint and legal-document hashing exist.
+// Public signing is gated server-side by the approved legal version and SIC validation.
 export default function PublicAcceptance() {
   const [result, setResult] = useState({ loading: true, order: null, error: '' });
   const [expanded, setExpanded] = useState([]);
@@ -130,7 +129,7 @@ export default function PublicAcceptance() {
         </section>}
         {result.order && <div className="bg-amber-50 border border-amber-200 p-4 mt-6 rounded flex gap-3 text-amber-900">
           <AlertTriangle className="shrink-0 w-6 h-6" />
-          <p>Ambiente de migração: a assinatura permanece desabilitada até a homologação jurídica, de segurança e do registro de evidências.</p>
+          <p>Confira todos os dados antes de assinar. Divergências devem ser comunicadas ao vendedor antes do aceite.</p>
         </div>}
       </section>
     </main>
