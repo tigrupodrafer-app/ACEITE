@@ -214,15 +214,12 @@ export default function VendorWorkflow(){
  return <section className="space-y-5">
   <style>{`@media print {
     @page { size: A4; margin: 12mm; }
-    body * { visibility: hidden !important; }
-    #drafer-print-document, #drafer-print-document * { visibility: visible !important; }
-    #drafer-print-document { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-    #drafer-print-document > :not(article):not(section) { display: none !important; }\n    #drafer-print-document > article { break-after: page; }
+    #drafer-print-document { display: block !important; width: 100% !important; }\n    #drafer-print-document > article { break-after: page; }
     #drafer-print-document section { margin-top: 0 !important; }
     #drafer-print-document table { width: 100% !important; min-width: 0 !important; }
     #drafer-print-document tr { break-inside: avoid; }
     #drafer-print-document button { color: #111 !important; }
-    #drafer-print-document .print\\:hidden { display: none !important; }
+
   }`}</style>
   <OrderLoadingModal open={Boolean(loadingPhase)} phase={loadingPhase} orderNumber={number}
    elapsed={elapsed} error={loadingError} onClose={closeError}/>
@@ -238,7 +235,7 @@ export default function VendorWorkflow(){
    {error&&<p role="alert" className="bg-red-50 border border-red-200 text-red-900 p-3 rounded">{error}</p>}
   </div>
   {order&&<>
-   <div id="drafer-print-document">
+   <div id="drafer-print-document" className="print:block">
    <PrintedOrder order={order.pedidoCompleto} items={items}/>
    {!totalsForPrint(items).weightComplete&&<p role="status" className="print:hidden bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-900">Há itens sem unidade de peso homologada. O total em KG não inclui produtos contabilizados apenas em unidades; confira o relatório SIC antes da emissão.</p>}
    <div className="print:hidden bg-white border rounded p-4 space-y-3">
