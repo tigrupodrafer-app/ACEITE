@@ -10,7 +10,7 @@ function invalid(message, statusCode = 400) {
 exports.handler = async (event) => {
   try {
     if (!['GET', 'POST'].includes(event.httpMethod)) throw invalid('Method not allowed', 405);
-    const { authUser } = await requireStaff(event);
+    const { authUser } = await requireStaff(event, { allowedRoles: ['admin', 'vendedor', 'aprovador'] });
 
     if (event.httpMethod === 'POST') {
       if ((event.body || '').length > 1024) throw invalid('Requisição muito grande');
