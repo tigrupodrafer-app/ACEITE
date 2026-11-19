@@ -72,7 +72,7 @@ begin
  update public.aceite_orders set updated_at=accepted
  where id=o.id;
  insert into public.aceite_audit_events(order_id,actor_type,action,metadata,user_agent)
- values(o.id,'cliente','acceptance_signed',
+ values(o.id,'cliente_publico','acceptance_signed',
  jsonb_build_object('acceptanceId',a,'legalVersion',p_legal_version,
  'legalSha256',p_legal_sha256,'signatureSha256',p_signature_sha256),
  left(p_user_agent,500));
