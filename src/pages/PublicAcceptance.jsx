@@ -48,10 +48,28 @@ export default function PublicAcceptance() {
           </div>
         )}
 
-        {result.order && <section className="mt-6 border rounded-lg p-4 space-y-3">
-          <h2 className="font-semibold text-lg">Espelho completo do pedido SIC</h2>
-          <p className="text-sm text-amber-800">A API pública ainda não disponibiliza o espelho integral. Campos pendentes não serão presumidos; assinatura bloqueada.</p>
-          <div className="grid sm:grid-cols-2 gap-2 text-sm">{['Razão social e CNPJ da empresa','CPF/CNPJ do cliente','Comprador','Tipo de venda','Endereço de entrega','Condição de pagamento e vencimentos','Código comercial dos itens','Valores unitários e totais'].map(field=><p key={field}><strong>{field}:</strong> Pendente de integração SIC</p>)}</div>
+        {result.order && <section className="mt-6 border rounded-lg p-4 space-y-4">
+          <h2 className="font-semibold text-lg">Espelho do pedido SIC</h2>
+          {!result.order.mirrorComplete || !result.order.mirror ? <p className="text-sm text-amber-800" role="status">Espelho integral ainda indisponível para este pedido. O aceite permanece bloqueado até a validação dos dados.</p> : <>
+            <div className="grid sm:grid-cols-2 gap-2 text-sm">
+              {[
+                ['Empresa',result.order.mirror.company.name],['Telefone da empresa',result.order.mirror.company.phone],
+                ['Pedido nº',result.order.mirror.order.number],['Tipo de venda',result.order.mirror.order.saleType],
+                ['Emissão',result.order.mirror.order.date],['Previsão de entrega',result.order.mirror.order.deliveryDate],
+                ['Vendedor',result.order.mirror.order.seller],['Condição de pagamento',result.order.mirror.order.payment],
+                ['Cliente',result.order.mirror.client.name],['Código do cliente',result.order.mirror.client.code],
+                ['CPF/CNPJ',result.order.mirror.client.document],['Telefone do cliente',result.order.mirror.client.phone],
+                ['Endereço',result.order.mirror.client.address],['Cidade',result.order.mirror.client.city],
+                ['Estado',result.order.mirror.client.state],['CEP',result.order.mirror.client.zip],
+                ['Local de entrega',result.order.mirror.order.deliveryAddress],['Observações',result.order.mirror.order.notes]
+              ].map(([label,value])=><p key={label}><strong>{label}:</strong> {value || 'Não informado no SIC'}</p>)}
+            </div>
+            <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-sm border-collapse">
+              <thead><tr className="border-b bg-slate-50">{['Código','Descrição','Unidade','Quantidade','Peças','Peso (kg)','Valor unitário','Total'].map(x=><th key={x} className="p-2 text-left">{x}</th>)}</tr></thead>
+              <tbody>{result.order.mirror.items.map((item,i)=><tr key={i} className="border-b">{[item.code,item.description,item.unit,item.quantity,item.pieces,item.weightKg,item.unitPrice,item.total].map((v,j)=><td key={j} className="p-2">{v ?? '—'}</td>)}</tr>)}</tbody>
+            </table></div>
+            <div className="text-sm grid sm:grid-cols-2 gap-2 border-t pt-3">{[['Subtotal',result.order.mirror.totals.subtotal],['Desconto',result.order.mirror.totals.discount],['Frete',result.order.mirror.totals.freight],['Total do pedido',result.order.mirror.totals.total]].map(([label,value])=><p key={label}><strong>{label}:</strong> {value == null ? 'Não informado no SIC' : new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(value)}</p>)}</div>
+          </>}
         </section>}
         {!result.error && <section className="mt-6 space-y-3">
           <div className="flex items-center justify-between"><h2 className="font-semibold text-lg">{LEGAL_TITLE} — 13 tópicos</h2><button type="button" className="border rounded px-3 py-2 text-sm" onClick={()=>setExpanded(expanded.length===13?[]:Array.from({length:13},(_,i)=>i))}>{expanded.length===13?'Recolher todos':'Expandir todos'}</button></div>
