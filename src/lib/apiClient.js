@@ -31,7 +31,7 @@ export function apiPost(path, body) { return apiRequest(path, 'POST', body); }
 
 // Download privado sem expor o JWT na URL. Endpoint autorizado no mesmo dominio.
 export async function apiDownloadPdf(path, filename) {
-  if (!/^\/\.netlify\/functions\/(?:review-document|approval-dossier)\?draftId=[a-f0-9-]{36}&download=1$/i.test(path)) {
+  if (!(/^\/\.netlify\/functions\/(?:review-document|approval-dossier)\?draftId=[a-f0-9-]{36}&download=1$/i.test(path) || /^\/\.netlify\/functions\/signed-acceptance-document\?orderId=[a-f0-9-]{36}$/i.test(path))) {
     throw new Error('Caminho de download nao permitido');
   }
   if (!supabase) throw new Error('Supabase nao configurado.');

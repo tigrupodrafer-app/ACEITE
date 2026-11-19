@@ -1,14 +1,40 @@
 import React, { useEffect, useState } from 'react';
+import SignatureCapture from '@/components/SignatureCapture';
 import { LEGAL_SECTIONS, LEGAL_CONSENT, LEGAL_TITLE } from '@/lib/legalTermRevised';
 import { AlertTriangle, ChevronDown, ChevronUp, FileText, Loader2 } from 'lucide-react';
 
 
 
-// Independent public read-only page. Signing is intentionally disabled
-// until the transactional signature endpoint and legal-document hashing exist.
+// Public signing is gated server-side by the approved legal version and SIC validation.
 export default function PublicAcceptance() {
   const [result, setResult] = useState({ loading: true, order: null, error: '' });
   const [expanded, setExpanded] = useState([]);
+  const [consents, setConsents] = useState([false, false, false]);
+  const allConfirmed = consents.every(Boolean);
+  const [signerName,setSignerName] = useState('');
+  const [signature,setSignature] = useState(null);
+  const [submitting,setSubmitting] = useState(false);
+  const [receipt,setReceipt] = useState(null);
+  const [submitError,setSubmitError] = useState('');
+  const canSign = Boolean(result.order?.mirrorComplete && result.order?.signingEnabled && allConfirmed && signature && signerName.trim().length >= 5);
+  async function submitAcceptance(event) {
+    event.preventDefault();
+    if (!canSign || submitting) return;
+    setSubmitting(true); setSubmitError('');
+    try {
+      const token = new URLSearchParams(window.location.search).get('token');
+      const response = await fetch('/.netlify/functions/confirm-acceptance', {
+        method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',
+        body:JSON.stringify({token,signerName,signature,consents:{
+          conferenciaPedido:consents[0],condicoesFornecimentoGarantia:consents[1],concordanciaAutorizacao:consents[2]
+        }})
+      });
+      const data = await response.json();
+      if (!response.ok || !data.accepted) throw new Error(data.error || 'Não foi possível confirmar o aceite.');
+      setReceipt(data);
+    } catch(error) {setSubmitError(error.message || 'Falha ao registrar assinatura.');}
+    finally {setSubmitting(false);}
+  }
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get('token');
     if (!token) {
@@ -81,13 +107,29 @@ export default function PublicAcceptance() {
         </section>}
         {result.order && <section className="mt-6 border-t pt-4 space-y-3">
           <h2 className="font-semibold text-lg">Declaração de conferência e aceite</h2>
-          {LEGAL_CONSENT.map((paragraph,i)=><p key={i} className="text-sm">{paragraph}</p>)}
-          {['Li e conferi o espelho integral do pedido.','Li e concordo com as condições comerciais e o termo.','Autorizo a fabricação dos produtos personalizados, quando aplicável.'].map(t=><label key={t} className="flex gap-2 text-sm"><input type="checkbox" disabled/>{t}</label>)}
-          <button type="button" disabled className="w-full rounded bg-slate-200 text-slate-500 p-3">Confirmar aceite e assinar — aguardando homologação</button>
+          {LEGAL_CONSENT.map((text,i)=><label key={i} className="flex gap-2 text-sm items-start"><input type="checkbox" className="mt-1" checked={consents[i]} onChange={event=>setConsents(old=>old.map((v,j)=>j===i?event.target.checked:v))}/><span>{text}</span></label>)}
+          {receipt ? <div role="status" className="bg-green-50 border border-green-300 rounded p-4">
+            <strong>Aceite registrado.</strong><p>Protocolo: {receipt.acceptanceId}</p>
+            <p>Data/hora: {new Date(receipt.acceptedAt).toLocaleString('pt-BR')}</p>
+            <p>O vendedor deverá conferir o comprovante antes de encaminhar o pedido à produção.</p>
+          </div> : <form onSubmit={submitAcceptance} className="space-y-3">
+            <label className="block text-sm font-medium" htmlFor="signer-name">Nome completo de quem assina</label>
+            <input id="signer-name" className="w-full border rounded p-2" maxLength={160} autoComplete="name"
+              value={signerName} onChange={event=>setSignerName(event.target.value)} />
+            <SignatureCapture onChange={setSignature} disabled={submitting || !result.order.signingEnabled} />
+            {!result.order.signingEnabled && <p className="text-sm text-amber-800" role="status">
+              A assinatura permanece bloqueada até a homologação do espelho, do documento e da versão jurídica.
+            </p>}
+            {submitError && <p role="alert" className="text-red-700">{submitError}</p>}
+            <button type="submit" disabled={!canSign || submitting}
+              className="w-full rounded bg-red-700 text-white p-3 disabled:bg-slate-200 disabled:text-slate-500">
+              {submitting?'Registrando aceite...':'Confirmar as três declarações e assinar'}
+            </button>
+          </form>}
         </section>}
         {result.order && <div className="bg-amber-50 border border-amber-200 p-4 mt-6 rounded flex gap-3 text-amber-900">
           <AlertTriangle className="shrink-0 w-6 h-6" />
-          <p>Ambiente de migração: a assinatura permanece desabilitada até a homologação jurídica, de segurança e do registro de evidências.</p>
+          <p>Confira todos os dados antes de assinar. Divergências devem ser comunicadas ao vendedor antes do aceite.</p>
         </div>}
       </section>
     </main>

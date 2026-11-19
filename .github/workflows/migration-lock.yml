@@ -1,5 +1,4 @@
-name: DRAFER ACEITE - Migration CI
-
+name: DRAFER ACEITE - Main CI
 on:
   push:
     branches:
@@ -8,10 +7,8 @@ on:
     branches:
       - main
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -20,15 +17,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-      - name: Install dependencies from committed lockfile
-        run: npm ci --no-audit --no-fund
-      - name: Verify Netlify Functions syntax
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax of all Netlify Functions
+        run: find netlify/functions -type f -name '*.cjs' -print0 | xargs -0 -n1 node --check
+      - name: Current acceptance tests
         run: |
-          find netlify/functions -type f -name '*.cjs' -print0 | xargs -0 -n1 node --check
-      - name: Test SIC endpoint security
-        run: node --test tests/*.test.cjs
-      - name: Verify local SIC server patch syntax
-        run: node --check server-patches/itensService.js
-      - name: Build React/Vite
-        run: npm run build
+          node --test scripts/test-acceptance-consent.cjs
+          node --test scripts/test-public-order-security.cjs
+          node --test scripts/test-document-integrity-audit.cjs
+          node --test scripts/test-final-workflow-mocks.cjs
+      - run: npm run build

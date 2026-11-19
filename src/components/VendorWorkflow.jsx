@@ -86,7 +86,7 @@ function Term(){
  const [expanded,setExpanded]=useState([]);
  return <section className="bg-white border rounded-lg p-4 sm:p-6 mt-5 space-y-4" aria-label="Termo jurídico revisado">
   <h3 className="text-lg font-bold">{LEGAL_TITLE}</h3>
-  <p className="text-sm rounded border border-amber-300 bg-amber-50 p-3 text-amber-900">Minuta v1.0 em homologação única. A assinatura e o envio definitivo permanecem bloqueados.</p>
+  <p className="text-sm rounded border border-amber-300 bg-amber-50 p-3 text-amber-900">Versão jurídica revisada: o envio ao cliente exige homologação registrada e conferência do pedido SIC.</p>
   <button type="button" className="border rounded px-3 py-2 text-sm print:hidden" onClick={()=>setExpanded(v=>v.length===LEGAL_SECTIONS.length?[]:LEGAL_SECTIONS.map((_,i)=>i))}>{expanded.length===LEGAL_SECTIONS.length?'Recolher todos':'Expandir todos'}</button>
   {LEGAL_SECTIONS.map(([title,paragraphs],i)=><div key={i} className="border rounded-lg break-inside-avoid print:break-inside-avoid">
    <button type="button" className="w-full text-left font-semibold p-3" aria-expanded={expanded.includes(i)} onClick={()=>setExpanded(v=>v.includes(i)?v.filter(x=>x!==i):[...v,i])}>{i+1}. {title} <span className="print:hidden">{expanded.includes(i)?'−':'+'}</span></button>
@@ -94,7 +94,7 @@ function Term(){
   </div>)}
   <h4 className="font-semibold">Declaração de conferência e aceite</h4>
   {LEGAL_CONSENT.map((p,i)=><p key={i} className="text-sm">{p}</p>)}
-  <div className="border-2 border-dashed rounded-lg p-5 text-center text-sm text-slate-600"><LockKeyhole className="h-6 w-6 mx-auto mb-2"/> Assinatura indisponível até a homologação e integração do espelho completo.</div>
+  <div className="border-2 border-dashed rounded-lg p-5 text-center text-sm text-slate-600"><LockKeyhole className="h-6 w-6 mx-auto mb-2"/> O cliente assina exclusivamente pelo link individual após a conferência do espelho SIC.</div>
  </section>;
 }
 export default function VendorWorkflow(){
@@ -104,6 +104,14 @@ export default function VendorWorkflow(){
  const [status,setStatus]=useState(null);
  const [draft,setDraft]=useState(null);
  const [review,setReview]=useState(null);
+ const [customerLink,setCustomerLink]=useState('');
+ const [linkBusy,setLinkBusy]=useState(false);
+ const [linkError,setLinkError]=useState('');
+ const [evidence,setEvidence]=useState(null);
+ const [signedPdf,setSignedPdf]=useState(null);
+ const [handoff,setHandoff]=useState(null);
+ const [legalApproval,setLegalApproval]=useState(null);
+ const [legalBusy,setLegalBusy]=useState(false);
  const [pdfBusy,setPdfBusy]=useState(false);
  const [pdfError,setPdfError]=useState('');
  const [working,setWorking]=useState(false);
@@ -153,7 +161,7 @@ export default function VendorWorkflow(){
   const query=number.trim();
   if(!/^[1-9]\d{0,11}$/.test(query)){setError('Informe um número de pedido válido.');return;}
   const seq=++querySequence.current;
-  setOrder(null);setStatus(null);setRequest(null);setDraft(null);setReview(null);setPdfError('');setError('');setLoadingError('');
+  setOrder(null);setStatus(null);setRequest(null);setDraft(null);setReview(null);setCustomerLink('');setEvidence(null);setSignedPdf(null);setHandoff(null);setLinkError('');setPdfError('');setError('');setLoadingError('');
   setElapsed(0);startedAt.current=Date.now();
   setLoadingPhase('enviando');setWorking(true);
   try{
@@ -220,6 +228,7 @@ export default function VendorWorkflow(){
    const prepared=await apiPost('/.netlify/functions/acceptance-draft',{requestId:request.requestId});
    if(!prepared.draftId)throw Error('Rascunho sem identificador.');
    setDraft(prepared);
+   await refreshStatus(number);
    const document=await apiPost('/.netlify/functions/review-document',{draftId:prepared.draftId});
    if(!document.documentId||!document.sha256)throw Error('Documento não registrado corretamente.');
    setReview(document);
@@ -232,6 +241,67 @@ export default function VendorWorkflow(){
   try{await apiDownloadPdf('/.netlify/functions/review-document?draftId='+draft.draftId+'&download=1','DRAFER-minuta-'+number+'-v'+review.version+'.pdf');}
   catch(e){setPdfError(e.message||'Falha no download.');}
   finally{setPdfBusy(false);}
+ };
+ const issueLink=async()=>{
+  if(!status?.orderId){setLinkError('Registre primeiro o pedido e confirme a elegibilidade.');return;}
+  setLinkBusy(true);setLinkError('');
+  try{
+   const result=await apiPost('/.netlify/functions/issue-acceptance-link',{orderId:status.orderId});
+   if(!result.relativeUrl)throw Error('O servidor não retornou o endereço do cliente.');
+   setCustomerLink(new URL(result.relativeUrl,window.location.origin).toString());
+   await refreshStatus(number);
+  }catch(e){setLinkError(e.message||'Não foi possível gerar o link.');}
+  finally{setLinkBusy(false);}
+ };
+ const verifyEvidence=async()=>{
+  if(!status?.orderId)return;
+  setLinkBusy(true);setLinkError('');
+  try{setEvidence(await apiGet('/.netlify/functions/seller-acceptance-evidence?orderId='+encodeURIComponent(status.orderId)));}
+  catch(e){setLinkError(e.message||'Não foi possível conferir as evidências.');}
+  finally{setLinkBusy(false);}
+ };
+ const generateSignedPdf=async()=>{
+  if(!status?.orderId)return;
+  setLinkBusy(true);setLinkError('');
+  try{setSignedPdf(await apiPost('/.netlify/functions/signed-acceptance-document',{orderId:status.orderId}));}
+  catch(e){setLinkError(e.message||'Não foi possível gerar o documento assinado.');}
+  finally{setLinkBusy(false);}
+ };
+ const downloadSignedPdf=async()=>{
+  if(!status?.orderId||!signedPdf)return;
+  setLinkBusy(true);setLinkError('');
+  try{await apiDownloadPdf('/.netlify/functions/signed-acceptance-document?orderId='+encodeURIComponent(status.orderId),'DRAFER-aceite-assinado-'+number+'.pdf');}
+  catch(e){setLinkError(e.message||'Não foi possível baixar o documento assinado.');}
+  finally{setLinkBusy(false);}
+ };
+ const handoffToProduction=async()=>{
+  if(!status?.orderId||!signedPdf||!evidence?.signatureIntegrity)return;
+  if(!window.confirm('Confirma que conferiu o pedido, a assinatura e o PDF e deseja registrar o encaminhamento para a produção? Esta ação não altera o SIC.'))return;
+  setLinkBusy(true);setLinkError('');
+  try{setHandoff(await apiPost('/.netlify/functions/production-handoff',{orderId:status.orderId,confirmed:true}));}
+  catch(e){setLinkError(e.message||'Não foi possível registrar o encaminhamento.');}
+  finally{setLinkBusy(false);}
+ };
+ const homologateLegal=async()=>{
+  if(!window.confirm('Confirma a homologação jurídica da versão 1.0-minuta das 13 cláusulas revisadas? Esta aprovação será vinculada à sua conta autenticada.'))return;
+  setLegalBusy(true);setLinkError('');
+  try{setLegalApproval(await apiPost('/.netlify/functions/approve-legal-version',{
+    confirmed:true,version:'1.0-minuta',
+    justification:'Homologação expressamente autorizada da versão jurídica revisada das treze cláusulas para o sistema DRAFER ACEITE.'
+  }));}
+  catch(e){setLinkError(e.message||'Não foi possível registrar a homologação.');}
+  finally{setLegalBusy(false);}
+ };
+ const activateAcceptance=async()=>{
+  const id=status?.orderId||draft?.draftId;
+  if(!id){setLinkError('Gere primeiro o aceite a partir do pedido SIC.');return;}
+  if(!window.confirm('Você conferiu o espelho integral do pedido SIC e confirma que está correto para envio ao cliente?'))return;
+  setLinkBusy(true);setLinkError('');
+  try{
+   await apiPost('/.netlify/functions/activate-acceptance',{orderId:id,confirmed:true});
+   await refreshStatus(number);
+  }catch(e){setLinkError(e.message||'Não foi possível habilitar o aceite.');}
+  finally{setLinkBusy(false);}
  };
  const items=order?.itens||[];
  const missingPrintCode=items.some(i=>printCode(i)==null);
@@ -286,12 +356,36 @@ export default function VendorWorkflow(){
     </div>
     <div className="border-t pt-3 space-y-2">
      <h4 className="font-semibold">Gerar e compartilhar aceite</h4>
-     <p className="text-sm text-amber-900">Emissão e link público permanecem bloqueados até a homologação do termo jurídico e das regras de negócio e segurança. A divergência do código de impressão no SIC não será investigada nesta etapa. O fluxo não exige aprovação individual por pedido.</p>
-     <div className="flex flex-wrap gap-2">
-      <button type="button" disabled className="bg-slate-300 text-slate-700 rounded px-4 py-2 inline-flex gap-2 items-center"><FileText className="w-4 h-4"/>Gerar aceite</button>
-      <button type="button" disabled className="border rounded px-4 py-2 inline-flex gap-2 items-center"><Copy className="w-4 h-4"/>Copiar link</button>
-      <button type="button" disabled className="border rounded px-4 py-2 inline-flex gap-2 items-center"><MessageCircle className="w-4 h-4"/>WhatsApp</button>
+     <div className="border rounded p-3 space-y-2 text-sm">
+      <p className="font-semibold">Homologação jurídica da versão revisada</p>
+      <p>A autorização da redação já foi concedida. Um administrador ou aprovador deve registrar a homologação usando sua sessão autenticada.</p>
+      <button type="button" disabled={legalBusy||Boolean(legalApproval?.approved)} onClick={homologateLegal} className="border rounded px-3 py-2 disabled:opacity-50">{legalBusy?'Registrando...':'Registrar homologação da versão revisada'}</button>
+      {legalApproval?.approved&&<p role="status" className="text-green-800 break-all">Homologada: {legalApproval.version} — SHA-256: {legalApproval.sha256}</p>}
      </div>
+     <button type="button" disabled={linkBusy||!(status?.orderId||draft?.draftId)||status?.state==='assinado'} onClick={activateAcceptance} className="border rounded px-4 py-2 disabled:opacity-50">Conferi o pedido SIC — habilitar aceite</button>
+     <p className="text-sm text-amber-900">O servidor só emitirá o link após validar o espelho integral, a elegibilidade e a versão jurídica homologada. Nenhuma aprovação individual por pedido é exigida.</p>
+     <div className="flex flex-wrap gap-2">
+      <button type="button" disabled={linkBusy||!status?.orderId||status?.state==='assinado'} onClick={issueLink} className="bg-slate-900 text-white disabled:bg-slate-300 disabled:text-slate-600 rounded px-4 py-2 inline-flex gap-2 items-center"><FileText className="w-4 h-4"/>Gerar link do cliente</button>
+      <button type="button" disabled={!customerLink} onClick={()=>navigator.clipboard.writeText(customerLink).catch(()=>setLinkError('Não foi possível copiar o link.'))} className="border rounded px-4 py-2 inline-flex gap-2 items-center disabled:opacity-50"><Copy className="w-4 h-4"/>Copiar link</button>
+      <button type="button" disabled={!customerLink} onClick={()=>window.open('https://wa.me/?text='+encodeURIComponent('Confira e assine seu pedido DRAFER: '+customerLink),'_blank','noopener,noreferrer')} className="border rounded px-4 py-2 inline-flex gap-2 items-center disabled:opacity-50"><MessageCircle className="w-4 h-4"/>WhatsApp</button>
+      <button type="button" disabled={linkBusy||!status?.orderId} onClick={verifyEvidence} className="border rounded px-4 py-2 inline-flex gap-2 items-center disabled:opacity-50"><ShieldCheck className="w-4 h-4"/>Conferir assinatura</button>
+     </div>
+     {customerLink&&<p className="text-xs break-all border rounded p-2" role="status">Link individual (compartilhe somente com o cliente): {customerLink}</p>}
+     {linkError&&<p role="alert" className="text-red-700 text-sm">{linkError}</p>}
+     {evidence&&<div className="border rounded p-3 text-sm space-y-1" role="status">
+       <p><strong>Assinado:</strong> {evidence.signed?'Sim':'Ainda não'}</p>
+       {evidence.signed&&<><p><strong>Assinante:</strong> {field(evidence.signerName)}</p><p><strong>Data:</strong> {date(evidence.acceptedAt)}</p>
+       <p><strong>Integridade da assinatura:</strong> {evidence.signatureIntegrity?'Verificada':'Não verificada — bloqueado'}</p>
+       <p className="break-all"><strong>SHA-256:</strong> {field(evidence.signatureSha256)}</p></>}
+       {evidence.signed&&evidence.signatureIntegrity&&<div className="flex flex-wrap gap-2 pt-2">
+        <button type="button" disabled={linkBusy} onClick={generateSignedPdf} className="border rounded px-3 py-2 disabled:opacity-50">Gerar PDF assinado</button>
+        {signedPdf&&<button type="button" disabled={linkBusy} onClick={downloadSignedPdf} className="border rounded px-3 py-2 disabled:opacity-50">Baixar PDF assinado</button>}
+       </div>}
+       {signedPdf&&<p className="text-xs break-all">SHA-256 do PDF: {signedPdf.sha256}</p>}
+       {signedPdf&&evidence.signatureIntegrity&&!handoff&&<button type="button" disabled={linkBusy} onClick={handoffToProduction} className="bg-slate-900 text-white rounded px-4 py-2 disabled:opacity-50">Conferi o aceite — registrar encaminhamento à produção</button>}
+       {handoff&&<p role="status" className="text-green-800">Encaminhamento registrado em {new Date(handoff.registeredAt).toLocaleString('pt-BR')}. Entregue à fila de conferência da produção; nenhuma alteração no SIC.</p>}
+       <p className="text-amber-900">A produção não é iniciada automaticamente e o SIC permanece inalterado.</p>
+     </div>}
     </div>
    </div>
    <Term/>

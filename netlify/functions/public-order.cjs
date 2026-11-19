@@ -1,5 +1,8 @@
 'use strict';
 const { respond, supabaseFetch, sha256, onlyMethod, handleError } = require('./_lib/backend.cjs');
+const {createHash}=require('node:crypto');
+const legal=require('../../src/lib/legalTermRevised.json');
+const legalHash=createHash('sha256').update(JSON.stringify(legal)).digest('hex');
 
 // Public mirror is served exclusively from a frozen, validated SIC snapshot.
 // Do not expose a raw snapshot: it can contain internal fields and unrelated PII.
@@ -70,9 +73,16 @@ exports.handler = async (event) => {
     }
     const d = order.details || {};
     const mirror = sicMirror(order);
-    // A populated projection is not proof of complete SIC mapping or document integrity.
-    // Keep this false until the final field-by-field and snapshot-hash homologation.
-    const mirrorComplete = false;
+    if (!mirror) {
+      // Never present a customer with a partial or ineligible order as an acceptance document.
+      return respond(404, { error: 'Aceite indisponível para este pedido' });
+    }
+    const approved=await supabaseFetch('/rest/v1/aceite_legal_versions?version=eq.'+
+      encodeURIComponent(legal.version)+'&content_sha256=eq.'+legalHash+
+      '&status=eq.homologado&select=id&limit=1');
+    const mirrorComplete=order.details?.mirrorComplete===true&&
+      order.details?.legalVersion===legal.version&&
+      order.details?.legalSha256===legalHash&&approved?.length===1;
     // Only the explicitly selected mirror projection is returned; never send raw snapshots or hashes.
     return respond(200, {
       order: {
@@ -86,6 +96,7 @@ exports.handler = async (event) => {
         level: item.level,
         mirror,
         mirrorComplete,
+        signingEnabled: mirrorComplete && item.level === 1,
       },
     });
   } catch (error) {

@@ -16,6 +16,9 @@ test('SIC enrichment reads two verified relations with parameterized queries',()
  assert.match(service,/cidadeRows\.length===1/);
  assert.match(service,/CLIENTE_CONTATO/);
  assert.match(service,/CLIENTE_CNPJ/);
+ // A virgula entre a ultima coluna e FROM deve permanecer na lista JS,
+ // evitando concatenacao silenciosa de literais na montagem do SQL.
+ assert.match(service,/'C.CODR AS CLIENTE_CODR',\s*\n\s*'FROM ARQES13/);
  assert.doesNotMatch(service,/INSERT INTO|UPDATE\s+ARQ|DELETE FROM|ALTER TABLE/i);
 });
 test('merge keeps original order, supplement city and company but not null',()=>{
@@ -29,7 +32,7 @@ test('merge keeps original order, supplement city and company but not null',()=>
  assert.equal(output.cliente.estado,'SP');
 });
 test('installer stages with hash, backup and never restarts process',()=>{
- assert.match(install,/b50c5fbfe02112df837ee419076f46d324dd0d34/);
+ assert.match(install,/b4d8fbc99e755619fb918f6bd430b4a2775a5fcf/);
  assert.match(install,/6b9ef352a98ab5ae2130787d1260b57ab9ee0471/);
  assert.match(install,/bak-v2-/);
  assert.match(install,/node --check/);
