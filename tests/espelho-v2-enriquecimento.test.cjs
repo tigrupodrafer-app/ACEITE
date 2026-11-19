@@ -16,6 +16,9 @@ test('SIC enrichment reads two verified relations with parameterized queries',()
  assert.match(service,/cidadeRows\.length===1/);
  assert.match(service,/CLIENTE_CONTATO/);
  assert.match(service,/CLIENTE_CNPJ/);
+ // A virgula entre a ultima coluna e FROM deve permanecer na lista JS,
+ // evitando concatenacao silenciosa de literais na montagem do SQL.
+ assert.match(service,/'C.CODR AS CLIENTE_CODR',\s*\n\s*'FROM ARQES13/);
  assert.doesNotMatch(service,/INSERT INTO|UPDATE\s+ARQ|DELETE FROM|ALTER TABLE/i);
 });
 test('merge keeps original order, supplement city and company but not null',()=>{
