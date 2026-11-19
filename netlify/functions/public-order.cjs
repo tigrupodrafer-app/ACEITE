@@ -14,7 +14,12 @@ function sicMirror(order) {
       snapshot.validacao?.valido !== true ||
       String(p.numero) !== String(order.sic_order_number) ||
       Number(p.empresa) !== Number(order.sic_company_id) ||
-      !items.every(x => x && typeof x.descricao === 'string' && Number.isFinite(Number(x.valorTotal)))) return null;
+      String(p.liberado || '').trim().toUpperCase() !== 'S' ||
+      !Number.isFinite(Number(p.valores?.total)) || Number(p.valores.total) <= 0 ||
+      !Number.isFinite(Number(snapshot.validacao?.somaItens)) ||
+      Math.abs(Number(p.valores.total) - Number(snapshot.validacao.somaItens)) > 0.02 ||
+      !items.every(x => x && typeof x.descricao === 'string' && x.descricao.trim() &&
+        x.valorTotal !== null && x.valorTotal !== undefined && Number.isFinite(Number(x.valorTotal)))) return null;
   const scalar = v => typeof v === 'string' || typeof v === 'number' ? String(v).slice(0, 250) : null;
   const money = v => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null;
   const client = p.cliente || {};
@@ -65,7 +70,10 @@ exports.handler = async (event) => {
     }
     const d = order.details || {};
     const mirror = sicMirror(order);
-    // Whitelist public fields: never send document, address, contacts, hashes or financial snapshots.
+    // A populated projection is not proof of complete SIC mapping or document integrity.
+    // Keep this false until the final field-by-field and snapshot-hash homologation.
+    const mirrorComplete = false;
+    // Only the explicitly selected mirror projection is returned; never send raw snapshots or hashes.
     return respond(200, {
       order: {
         order_number: order.order_number,
@@ -77,7 +85,7 @@ exports.handler = async (event) => {
         thickness: typeof d.thickness === 'string' ? d.thickness : '',
         level: item.level,
         mirror,
-        mirrorComplete: mirror !== null,
+        mirrorComplete,
       },
     });
   } catch (error) {
