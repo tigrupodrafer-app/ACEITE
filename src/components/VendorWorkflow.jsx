@@ -109,6 +109,7 @@ export default function VendorWorkflow(){
  const [linkError,setLinkError]=useState('');
  const [evidence,setEvidence]=useState(null);
  const [signedPdf,setSignedPdf]=useState(null);
+ const [handoff,setHandoff]=useState(null);
  const [pdfBusy,setPdfBusy]=useState(false);
  const [pdfError,setPdfError]=useState('');
  const [working,setWorking]=useState(false);
@@ -158,7 +159,7 @@ export default function VendorWorkflow(){
   const query=number.trim();
   if(!/^[1-9]\d{0,11}$/.test(query)){setError('Informe um número de pedido válido.');return;}
   const seq=++querySequence.current;
-  setOrder(null);setStatus(null);setRequest(null);setDraft(null);setReview(null);setCustomerLink('');setEvidence(null);setSignedPdf(null);setLinkError('');setPdfError('');setError('');setLoadingError('');
+  setOrder(null);setStatus(null);setRequest(null);setDraft(null);setReview(null);setCustomerLink('');setEvidence(null);setSignedPdf(null);setHandoff(null);setLinkError('');setPdfError('');setError('');setLoadingError('');
   setElapsed(0);startedAt.current=Date.now();
   setLoadingPhase('enviando');setWorking(true);
   try{
@@ -270,6 +271,14 @@ export default function VendorWorkflow(){
   catch(e){setLinkError(e.message||'Não foi possível baixar o documento assinado.');}
   finally{setLinkBusy(false);}
  };
+ const handoffToProduction=async()=>{
+  if(!status?.orderId||!signedPdf||!evidence?.signatureIntegrity)return;
+  if(!window.confirm('Confirma que conferiu o pedido, a assinatura e o PDF e deseja registrar o encaminhamento para a produção? Esta ação não altera o SIC.'))return;
+  setLinkBusy(true);setLinkError('');
+  try{setHandoff(await apiPost('/.netlify/functions/production-handoff',{orderId:status.orderId,confirmed:true}));}
+  catch(e){setLinkError(e.message||'Não foi possível registrar o encaminhamento.');}
+  finally{setLinkBusy(false);}
+ };
  const items=order?.itens||[];
  const missingPrintCode=items.some(i=>printCode(i)==null);
  return <section className="space-y-5">
@@ -342,7 +351,9 @@ export default function VendorWorkflow(){
         {signedPdf&&<button type="button" disabled={linkBusy} onClick={downloadSignedPdf} className="border rounded px-3 py-2 disabled:opacity-50">Baixar PDF assinado</button>}
        </div>}
        {signedPdf&&<p className="text-xs break-all">SHA-256 do PDF: {signedPdf.sha256}</p>}
-       <p className="text-amber-900">Encaminhamento automático à produção desabilitado. Aguarda conferência e homologação final.</p>
+       {signedPdf&&evidence.signatureIntegrity&&!handoff&&<button type="button" disabled={linkBusy} onClick={handoffToProduction} className="bg-slate-900 text-white rounded px-4 py-2 disabled:opacity-50">Conferi o aceite — registrar encaminhamento à produção</button>}
+       {handoff&&<p role="status" className="text-green-800">Encaminhamento registrado em {new Date(handoff.registeredAt).toLocaleString('pt-BR')}. Entregue à fila de conferência da produção; nenhuma alteração no SIC.</p>}
+       <p className="text-amber-900">A produção não é iniciada automaticamente e o SIC permanece inalterado.</p>
      </div>}
     </div>
    </div>
