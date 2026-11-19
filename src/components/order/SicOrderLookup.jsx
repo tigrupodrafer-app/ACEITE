@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { consultarPedidoSic } from '@/lib/sicPedidoApi';
+import EspelhoPedidoSic from '@/components/order/EspelhoPedidoSic';
 
 /** Consulta somente leitura; não cria pedido, aceite, token ou documento. */
 export default function SicOrderLookup() {
@@ -44,6 +45,7 @@ export default function SicOrderLookup() {
         </tr>)}</tbody>
       </table></div>
       <div><strong>Subtotal:</strong> {moeda(pedido.valores.subtotal)} · <strong>Desconto:</strong> {moeda(pedido.valores.desconto)} · <strong>Total:</strong> {moeda(pedido.valores.total)}</div>
+      <EspelhoPedidoSic pedido={pedido} />
       {pedido.pendencias.length > 0
         ? <div className="rounded border border-amber-300 p-3"><strong>Pendências — emissão jurídica bloqueada:</strong>
             <ul className="list-disc pl-5">{pedido.pendencias.map((v,i) => <li key={i}>{v}</li>)}</ul></div>
