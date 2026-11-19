@@ -4,7 +4,7 @@ const { respond, supabaseFetch, requireStaff, onlyMethod, handleError } = requir
 exports.handler = async (event) => {
   try {
     onlyMethod(event, 'GET');
-    await requireStaff(event);
+    await requireStaff(event, { allowedRoles: ['admin', 'vendedor', 'aprovador'] });
     const limit = Math.max(1, Math.min(100, Number.parseInt(event.queryStringParameters?.limit || '50', 10) || 50));
     // No client-controlled SQL, role, company or table name is accepted.
     const rows = await supabaseFetch(
