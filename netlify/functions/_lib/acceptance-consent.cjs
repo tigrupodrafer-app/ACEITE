@@ -1,7 +1,7 @@
 'use strict';
 // Validacao isolada das tres confirmacoes do cliente.
 // Nao assina, nao cria token, nao grava dados e nao autoriza producao.
-const legal = require('../../src/lib/legalTermRevised.json');
+const legal = require('../../../src/lib/legalTermRevised.json');
 
 const CONSENT_KEYS = Object.freeze([
   'conferenciaPedido',
