@@ -110,7 +110,7 @@ export default function Login() {
           <ShieldCheck className="text-red-700 h-10 w-10" />
           <div>
             <h1 className="text-2xl font-bold text-slate-900">ACEITE DRAFER</h1>
-            <p className="text-sm text-slate-500">Acesso administrativo seguro</p>
+            <p className="text-sm text-slate-500">Acesso corporativo — consulta de pedidos SIC</p>
           </div>
         </div>
         {!supabase && (
@@ -183,7 +183,7 @@ export default function Login() {
         </div>
         <p className="text-xs text-slate-500 mt-6">
           Apenas contas previamente cadastradas e autorizadas podem acessar o ACEITE DRAFER.
-          Validar um e-mail não concede automaticamente permissão para aprovar documentos.
+          O acesso depende de cadastro e autorização no sistema, independentemente do método de login.
         </p>
       </section>
     </main>
