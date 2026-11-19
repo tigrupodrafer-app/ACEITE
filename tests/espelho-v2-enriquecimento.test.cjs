@@ -1,0 +1,41 @@
+'use strict';
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const service=fs.readFileSync(path.join(__dirname,'../server-patches/espelhoService.js'),'utf8');
+const vm=require('node:vm');
+const moduleShim={exports:{}};
+vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../server-patches/espelhoMerge.js'),'utf8'),{module:moduleShim});
+const merge=moduleShim.exports;
+const install=fs.readFileSync(path.join(__dirname,'../scripts/Instalar-Espelho-V2-Notepad.ps1'),'utf8');
+test('SIC enrichment reads two verified relations with parameterized queries',()=>{
+ assert.match(service,/FROM EMPRESA WHERE COD_EMPRESA=\?/);
+ assert.match(service,/FROM CIDADES WHERE SEQCIDADE=\?/);
+ assert.match(service,/empresaRows\.length===1/);
+ assert.match(service,/cidadeRows\.length===1/);
+ assert.match(service,/CLIENTE_CONTATO/);
+ assert.match(service,/CLIENTE_CNPJ/);
+ // A virgula entre a ultima coluna e FROM deve permanecer na lista JS,
+ // evitando concatenacao silenciosa de literais na montagem do SQL.
+ assert.match(service,/'C.CODR AS CLIENTE_CODR',\s*\n\s*'FROM ARQES13/);
+ assert.doesNotMatch(service,/INSERT INTO|UPDATE\s+ARQ|DELETE FROM|ALTER TABLE/i);
+});
+test('merge keeps original order, supplement city and company but not null',()=>{
+ const output=merge.mergePedidoEspelho(
+  {numero:1,empresa:1,cliente:{cidade:'Antiga',nome:'Exemplo'}},
+  {numero:1,empresa:1,nomeEmpresa:'Filial',cliente:{cidade:'Nova',nome:null,estado:'SP'}}
+ );
+ assert.equal(output.nomeEmpresa,'Filial');
+ assert.equal(output.cliente.cidade,'Nova');
+ assert.equal(output.cliente.nome,'Exemplo');
+ assert.equal(output.cliente.estado,'SP');
+});
+test('installer stages with hash, backup and never restarts process',()=>{
+ assert.match(install,/b4d8fbc99e755619fb918f6bd430b4a2775a5fcf/);
+ assert.match(install,/6b9ef352a98ab5ae2130787d1260b57ab9ee0471/);
+ assert.match(install,/bak-v2-/);
+ assert.match(install,/node --check/);
+ assert.match(install,/Start-Process notepad\.exe/);
+ assert.doesNotMatch(install,/Restart-Service|Stop-Process|Stop-Service|taskkill/i);
+});
