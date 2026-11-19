@@ -58,10 +58,21 @@ exports.handler = async (event) => {
     }
     // No assumption about SITU/FATURADO or approval to manufacture.
     const existing = await findExisting(company, orderNumber);
-    if (existing) return respond(200, {
-      draftId: existing.id, status: existing.status, created: false,
-      message: 'Já existe registro interno deste pedido. Nenhum aceite ou link foi criado.',
-    });
+    if (existing) {
+      if (existing.status !== 'rascunho') return respond(200, {
+        draftId: existing.id, status: existing.status, created: false,
+        message: 'Pedido já registrado. O espelho não foi alterado.',
+      });
+      // Atomic refresh: only a recent, owned SIC query can replace an unsigned draft.
+      // Historical review PDFs remain immutable and must not be represented as current.
+      const refreshed = await supabaseFetch('/rest/v1/rpc/aceite_atualizar_rascunho_sic', {
+        method: 'POST', body: { p_order_id: existing.id, p_request_id: query.id, p_actor_id: authUser.id },
+      });
+      return respond(200, { draftId: existing.id, status: 'rascunho', created: false,
+        refreshed: refreshed?.updated === true,
+        message: refreshed?.updated ? 'Espelho SIC atualizado. Gere uma nova versão da minuta para revisão.' :
+          'Espelho SIC já atualizado. Nenhum documento anterior foi alterado.' });
+    }
 
     const payload = {
       origin: 'SIC_SUPRASYS', sic_company_id: company, sic_order_number: orderNumber,
