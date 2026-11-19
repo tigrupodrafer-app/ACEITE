@@ -37,9 +37,9 @@ begin
  or p_legal_sha256 !~ '^[a-f0-9]{64}$'
  or length(trim(coalesce(p_signer_name,''))) not between 5 and 160
  or p_checklist is null or jsonb_typeof(p_checklist)<>'object'
- or p_checklist->'conferenciaPedido'<>'true'::jsonb
- or p_checklist->'condicoesFornecimentoGarantia'<>'true'::jsonb
- or p_checklist->'concordanciaAutorizacao'<>'true'::jsonb
+ or p_checklist->'conferenciaPedido' is distinct from 'true'::jsonb
+ or p_checklist->'condicoesFornecimentoGarantia' is distinct from 'true'::jsonb
+ or p_checklist->'concordanciaAutorizacao' is distinct from 'true'::jsonb
  then raise exception 'Assinatura invalida'; end if;
  select * into t from public.aceite_tokens where token_hash=p_token_hash for update;
  if not found or t.level<>1 or t.used_at is not null or t.revoked_at is not null
@@ -48,13 +48,13 @@ begin
  then raise exception 'Caminho da assinatura invalido'; end if;
  select * into o from public.aceite_orders where id=t.order_id for update;
  if not found or o.origin<>'SIC_SUPRASYS' or o.status<>'aguardando_aceite_pedido'
- or o.details->>'legalDocumentApproved'<>'true'
- or o.details->>'eligibilityApproved'<>'true'
- or o.details->>'mirrorComplete'<>'true'
- or o.order_snapshot->'validacao'->>'valido'<>'true'
- or o.order_snapshot->'pedidoCompleto'->>'numero'<>o.sic_order_number::text
- or o.order_snapshot->'pedidoCompleto'->>'empresa'<>o.sic_company_id::text
- or jsonb_typeof(o.order_snapshot->'itens')<>'array'
+ or o.details->>'legalDocumentApproved' is distinct from 'true'
+ or o.details->>'eligibilityApproved' is distinct from 'true'
+ or o.details->>'mirrorComplete' is distinct from 'true'
+ or o.order_snapshot->'validacao'->>'valido' is distinct from 'true'
+ or o.order_snapshot->'pedidoCompleto'->>'numero' is distinct from o.sic_order_number::text
+ or o.order_snapshot->'pedidoCompleto'->>'empresa' is distinct from o.sic_company_id::text
+ or jsonb_typeof(o.order_snapshot->'itens') is distinct from 'array'
  or jsonb_array_length(o.order_snapshot->'itens')=0
  then raise exception 'Pedido nao homologado'; end if;
  if not exists (select 1 from public.aceite_legal_versions
