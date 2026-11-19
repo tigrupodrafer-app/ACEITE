@@ -37,7 +37,7 @@ exports.handler=async(event)=>{
   await supabaseFetch('/rest/v1/aceite_tokens',{method:'POST',body:{
     order_id:o.id,level:1,token_hash:sha256(raw),expires_at:expiresAt
   }});
-  return respond(201,{token:raw,expiresAt,relativeUrl:'/aceite?token='+raw,
+  return respond(201,{token:raw,expiresAt,relativeUrl:'/AssinarAceite?token='+raw,
     message:'Link pessoal: compartilhe somente com o cliente correto.'});
  }catch(error){return handleError(error)}
 };
