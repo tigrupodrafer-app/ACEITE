@@ -16,7 +16,10 @@ async function storage(path,method='GET',bytes){
   method,headers:{apikey:key,Authorization:'Bearer '+key,...(method==='POST'?{
     'Content-Type':'application/pdf','x-upsert':'false'}:{})},
   ...(bytes?{body:bytes}:{}),signal:AbortSignal.timeout(10000)});
- if(!res.ok)throw invalid('Arquivo privado indisponivel',503);
+ if(!res.ok){
+  if(method==='POST' && (res.status===409||res.status===400))throw invalid('Documento em geracao simultanea; consulte novamente em instantes',409);
+  throw invalid('Arquivo privado indisponivel',503);
+ }
  return method==='GET'?Buffer.from(await res.arrayBuffer()):null;
 }
 function buildPdf(order,a,signature){
@@ -112,7 +115,14 @@ exports.handler=async event=>{
     'Content-Disposition':'attachment; filename="aceite-assinado-'+order.order_number+'.pdf"'
    },body:bytes.toString('base64')};
   }
-  if(existing)return respond(200,{documentId:existing.id,sha256:existing.file_sha256.trim(),created:false});
+  if(existing){
+   if(existing.acceptance_id!==a.id||!/^signed\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.pdf$/i.test(existing.storage_path))
+    throw invalid('Registro de documento inconsistente');
+   const archived=await storage(existing.storage_path);
+   if(archived.length>4*1024*1024||sha(archived)!==existing.file_sha256.trim())
+    throw invalid('Integridade do documento arquivado invalida');
+   return respond(200,{documentId:existing.id,sha256:existing.file_sha256.trim(),created:false});
+  }
   if(order.details?.legalDocumentApproved!==true||
      order.details?.eligibilityApproved!==true||
      order.details?.mirrorComplete!==true||
@@ -133,11 +143,23 @@ exports.handler=async event=>{
   if(pdf.length>4*1024*1024)throw invalid('PDF excede o tamanho permitido');
   const path='signed/'+id+'/'+a.id+'.pdf';
   await storage(path,'POST',pdf);
-  const rows=await supabaseFetch('/rest/v1/aceite_generated_documents?select=id',{
+  let rows;
+  try{rows=await supabaseFetch('/rest/v1/aceite_generated_documents?select=id',{
    method:'POST',headers:{Prefer:'return=representation'},body:{
     order_id:id,acceptance_id:a.id,document_type:'level1_acceptance',
     version:1,storage_path:path,file_sha256:sha(pdf)
-   }});
+   }});}catch(error){
+    // Another request may have committed the unique (order,type,version) record first.
+    const winner=await supabaseFetch('/rest/v1/aceite_generated_documents?order_id=eq.'+id+
+      '&document_type=eq.level1_acceptance&version=eq.1&select=id,acceptance_id,storage_path,file_sha256&limit=1');
+    const record=winner?.[0];
+    if(record?.acceptance_id===a.id&&record.storage_path===path){
+      const archived=await storage(path);
+      if(sha(archived)===record.file_sha256?.trim())
+       return respond(200,{documentId:record.id,sha256:record.file_sha256.trim(),created:false});
+    }
+    throw error;
+   }
   if(!rows?.[0]?.id)throw invalid('Registro do documento nao confirmado',503);
   return respond(201,{documentId:rows[0].id,sha256:sha(pdf),created:true});
  }catch(error){return handleError(error)}
