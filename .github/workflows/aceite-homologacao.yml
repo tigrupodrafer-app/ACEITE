@@ -22,5 +22,6 @@ jobs:
           node --test scripts/test-acceptance-consent.cjs
           node --test scripts/test-public-order-security.cjs
           node --test scripts/test-document-integrity-audit.cjs
+          node --test scripts/test-final-workflow-mocks.cjs
       - name: Compilacao do frontend
         run: npm run build
