@@ -24,6 +24,15 @@ function clean(value) {
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[\r\n\t\u0000-\u001f]/g, ' ').slice(0, 400);
 }
+function display(value) {
+  if (value === null || value === undefined || String(value).trim() === '') return 'Nao informado';
+  return clean(value);
+}
+function quantity(value) {
+  const n = Number(value);
+  return value !== null && value !== undefined && value !== '' && Number.isFinite(n)
+    ? n.toLocaleString('pt-BR', { maximumFractionDigits: 3 }) : 'Nao informado';
+}
 function dateBR(value) {
   if (!value) return 'Nao informada';
   const d = new Date(value);
@@ -71,7 +80,19 @@ function pdfForReview(order, version) {
   p('Versao documental: ' + version + ' | Documento nao aprovado juridicamente.', { bold: true });
   p('Esta copia e exclusivamente para conferencia administrativa. Nao e aceite, contrato assinado nem autorizacao de fabricacao.');
   p('Pedido: ' + order.order_number + ' | Empresa SIC: ' + order.sic_company_id, { bold: true });
+  p('Empresa: ' + display(pedido.nomeEmpresa || pedido.razaoSocialEmpresa) + ' | Telefone: ' + display(pedido.telefoneEmpresa));
+  p('Tipo de venda: ' + display(pedido.tipoVenda || pedido.tipoVendaDescricao || pedido.tipoVendaCodigo) + ' | Tabela: ' + display(pedido.tabelaPreco));
   p('Cliente: ' + order.client_name);
+  p('Telefone cliente: ' + display(pedido.cliente?.telefone || pedido.telefoneCliente));
+  p('Documento cliente: ' + display(pedido.cliente?.cnpj || pedido.cliente?.cpf || pedido.cliente?.cnpjCpf || pedido.cnpjCpf));
+  p('Comprador: ' + display(pedido.cliente?.comprador || pedido.comprador) + ' | E-mail: ' + display(pedido.cliente?.email || pedido.emailCliente));
+  p('Endereco: ' + display(pedido.cliente?.endereco || pedido.endereco) + ' | Numero: ' + display(pedido.cliente?.numeroEndereco));
+  p('Bairro: ' + display(pedido.cliente?.bairro || pedido.bairro) + ' | CEP: ' + display(pedido.cliente?.cep || pedido.cep));
+  p('Cidade: ' + display(pedido.cliente?.cidade || pedido.cidade) + ' | UF: ' + display(pedido.cliente?.estado || pedido.estado));
+  p('Local de entrega: ' + display(pedido.localEntrega || pedido.enderecoEntrega));
+  p('Condicao de pagamento: ' + display(pedido.condicaoPagamento || pedido.condicoesPagamento || pedido.codigoCondicaoPagamentoCadastral));
+  p('Forma de cobranca: ' + display(pedido.formaCobranca || pedido.formaPagamento));
+  p('Observacoes: ' + display(pedido.observacoes || pedido.obs));
   p('Codigo do cliente: ' + clean(pedido.cliente?.codigo));
   p('Data do pedido: ' + dateBR(pedido.dataPedido));
   p('Previsao de entrega: ' + dateBR(pedido.dataEntrega));
@@ -79,21 +100,22 @@ function pdfForReview(order, version) {
   p('1. ITENS CONSULTADOS NO SIC', { size: 12, bold: true });
   for (const [index, item] of items.entries()) {
     p((index + 1) + '. ' + clean(item.descricao), { bold: true });
-    p('Codigo comercial: ' + clean(item.codigoProdutoComercial) +
+    p('Codigo de impressao: ' + display(item.codigoProdutoImpressao ?? item.codigoImpressao) +\n      ' | Codigo comercial: ' + display(item.codigoProdutoComercial) +
       ' | Sequencia interna: ' + clean(item.codigoProdutoInterno ?? item.codigoProduto) +
       ' | Referencia fornecedor: ' + clean(item.referenciaFornecedor));
-    p('Quantidade base: ' + clean(item.quantidade) + ' ' + clean(item.unidade) +
-      ' | Peso liquido: ' + clean(item.pesoLiquidoKg) + ' kg | Pecas: ' + clean(item.quantidadePecas));
+    p('Quantidade comercial: ' + quantity(item.quantidade) + ' ' + display(item.unidade) +
+      ' | Peso KG: ' + quantity(item.pesoLiquidoKg ?? item.pesoBrutoKg) +
+      ' | Quantidade pecas: ' + quantity(item.quantidadePecas));
     p('Valor unitario base: ' + formatBRL(item.valorUnitario) +
       ' | Por peca: ' + formatBRL(item.valorUnitarioPeca) +
       ' | Total item: ' + formatBRL(item.valorTotal));
   }
-  p('Subtotal: ' + formatBRL(pedido.valores?.subtotal) +
+  p('Frete: ' + formatBRL(pedido.valores?.frete ?? pedido.frete));\n  p('Subtotal: ' + formatBRL(pedido.valores?.subtotal) +
     ' | Desconto: ' + formatBRL(pedido.valores?.desconto) +
     ' | Total: ' + formatBRL(pedido.valores?.total), { bold: true });
   p('Conferencia aritmetica: ' + (validacao.valido === true ? 'APROVADA' : 'PENDENTE'));
 
-  p('GRUPO DRAFER - ' + legal.title, { size: 13, bold: true });
+  pdf.addPage(); header(); y = 26;\n  p('GRUPO DRAFER - ' + legal.title, { size: 13, bold: true });
   p('Versao juridica: ' + legal.version + ' - minuta para homologacao unica.', { bold: true });
   for (const [index, section] of legal.sections.entries()) {
     if (y > h - 40) { pdf.addPage(); header(); y = 26; }
