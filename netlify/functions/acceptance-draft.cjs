@@ -23,7 +23,7 @@ async function findExisting(company, number) {
 exports.handler = async (event) => {
   try {
     onlyMethod(event, 'POST');
-    const { authUser } = await requireStaff(event);
+    const { authUser } = await requireStaff(event, { allowedRoles: ['admin', 'vendedor', 'aprovador'] });
     if ((event.body || '').length > 512) throw invalid('Requisição inválida', 400);
     let input;
     try { input = JSON.parse(event.body || '{}'); } catch { throw invalid('JSON inválido', 400); }
