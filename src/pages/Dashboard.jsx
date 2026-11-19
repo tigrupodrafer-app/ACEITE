@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
@@ -34,12 +33,6 @@ export default function Dashboard() {
             <p className="text-slate-600 mt-1">Consulta de pedidos e emissão de aceites — SIC SupraSYS</p>
           </div>
           <div className="flex flex-wrap gap-2">
-          <Link to="/Apresentacao" className="inline-flex gap-2 items-center rounded-md bg-red-700 hover:bg-red-800 text-white px-4 py-2 text-sm font-semibold">
-            <FileText className="w-4 h-4"/> Apresentar fluxo do aceite
-          </Link>
-          <Link to="/Laboratorio" className="inline-flex gap-2 items-center rounded-md bg-slate-900 hover:bg-slate-700 text-white px-4 py-2 text-sm font-semibold">
-            <FileText className="w-4 h-4"/> Testar assinatura e fabricação
-          </Link>
           <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={isFetching ? 'w-4 h-4 mr-2 animate-spin' : 'w-4 h-4 mr-2'} /> Atualizar
           </Button>
