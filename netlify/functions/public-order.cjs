@@ -70,6 +70,10 @@ exports.handler = async (event) => {
     }
     const d = order.details || {};
     const mirror = sicMirror(order);
+    if (!mirror) {
+      // Never present a customer with a partial or ineligible order as an acceptance document.
+      return respond(404, { error: 'Aceite indisponível para este pedido' });
+    }
     // A populated projection is not proof of complete SIC mapping or document integrity.
     // Keep this false until the final field-by-field and snapshot-hash homologation.
     const mirrorComplete = false;
