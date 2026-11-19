@@ -56,3 +56,18 @@ test('rejeita CPF inválido e aceita CPF de teste com dígitos verificadores', (
   assert.equal(validarCpfCnpj('11111111111'), false);
   assert.equal(validarCpfCnpj('52998224725'), true);
 });
+
+test('bloqueia divergência de quantidade de itens entre cabeçalho e lista', () => {
+  const r = base(); r.pedido.quantidadeItens = 3;
+  assert.equal(adaptarPedidoSic(r).aptoParaPreparacao, false);
+});
+
+test('bloqueia itens sem valor comercial', () => {
+  const r = base(); delete r.pedido.itens[0].valorTotal;
+  assert.equal(adaptarPedidoSic(r).aptoParaPreparacao, false);
+});
+
+test('bloqueia divergência na contagem da validação financeira', () => {
+  const r = base(); r.validacao.quantidadeItens = 1;
+  assert.equal(adaptarPedidoSic(r).aptoParaPreparacao, false);
+});
