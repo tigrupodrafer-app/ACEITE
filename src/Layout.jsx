@@ -9,7 +9,7 @@ export default function Layout({ children }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#f5f5f5' }}>
-      <nav style={{ backgroundColor: '#1a1a1a', borderBottom: '4px solid #cc0000' }} className="shadow-lg">
+      <nav className="print:hidden" style={{ backgroundColor: '#1a1a1a', borderBottom: '4px solid #cc0000' }} className="shadow-lg">
         <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center gap-3">
           <Link to="/Dashboard" className="text-white hover:opacity-80 flex gap-3 items-center">
             <div className="bg-red-700 text-white font-extrabold px-3 py-2 rounded">D</div>
@@ -35,8 +35,8 @@ export default function Layout({ children }) {
           </div>
         </div>
       </nav>
-      <main>{children}</main>
-      <footer style={{ backgroundColor: '#1a1a1a', borderTop: '4px solid #cc0000' }}
+      <main className="print:block">{children}</main>
+      <footer className="print:hidden" style={{ backgroundColor: '#1a1a1a', borderTop: '4px solid #cc0000' }}
         className="text-center text-slate-300 py-5 text-sm">
         © 2026 Grupo DRAFER — Sistema de Aceite Jurídico
       </footer>
