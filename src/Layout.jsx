@@ -15,14 +15,13 @@ export default function Layout({ children }) {
             <div className="bg-red-700 text-white font-extrabold px-3 py-2 rounded">D</div>
             <div>
               <p className="font-semibold text-sm">ACEITE DRAFER</p>
-              <p className="text-xs text-slate-300">Sistema de Aceite Jurídico</p>
+              <p className="text-xs text-slate-300">Consulta de pedidos e aceites</p>
             </div>
           </Link>
           <div className="flex gap-3 items-center">
             <Link to="/Dashboard" className="hidden sm:inline text-sm text-slate-200 hover:text-white">
-              Dashboard
+              Consultar pedidos
             </Link>
-            <span className="hidden md:inline text-xs text-slate-400" title="Funcionalidades ainda em migração">Pedidos: em migração</span>
             {user && (
               <>
                 <span className="text-xs md:text-sm text-slate-200 flex gap-1 items-center">
