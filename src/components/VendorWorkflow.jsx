@@ -3,7 +3,7 @@ import OrderLoadingModal from '@/components/OrderLoadingModal';
 import { LEGAL_SECTIONS, LEGAL_CONSENT, LEGAL_TITLE } from '@/lib/legalTermRevised';
 import printCalc from '@/lib/sicPrintTotals.cjs';
 const {totalsForPrint,itemWeight}=printCalc;
-import {apiGet,apiPost} from '@/lib/apiClient';
+import {apiGet,apiPost,apiDownloadPdf} from '@/lib/apiClient';
 import {Search,Loader2,Printer,RefreshCw,FileText,LockKeyhole,Copy,MessageCircle,ShieldCheck} from 'lucide-react';
 
 const brl=v=>v===null||v===undefined||v===''?'—':Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -102,6 +102,10 @@ export default function VendorWorkflow(){
  const [request,setRequest]=useState(null);
  const [order,setOrder]=useState(null);
  const [status,setStatus]=useState(null);
+ const [draft,setDraft]=useState(null);
+ const [review,setReview]=useState(null);
+ const [pdfBusy,setPdfBusy]=useState(false);
+ const [pdfError,setPdfError]=useState('');
  const [working,setWorking]=useState(false);
  const [error,setError]=useState('');
  const [loadingPhase,setLoadingPhase]=useState(null);
@@ -149,7 +153,7 @@ export default function VendorWorkflow(){
   const query=number.trim();
   if(!/^[1-9]\d{0,11}$/.test(query)){setError('Informe um número de pedido válido.');return;}
   const seq=++querySequence.current;
-  setOrder(null);setStatus(null);setRequest(null);setError('');setLoadingError('');
+  setOrder(null);setStatus(null);setRequest(null);setDraft(null);setReview(null);setPdfError('');setError('');setLoadingError('');
   setElapsed(0);startedAt.current=Date.now();
   setLoadingPhase('enviando');setWorking(true);
   try{
@@ -209,6 +213,26 @@ export default function VendorWorkflow(){
   return()=>{active=false;window.clearInterval(timer);};
  },[request?.requestId,request?.status]);
  const closeError=()=>{setLoadingPhase(null);setLoadingError('');setRequest(null);querySequence.current++;};
+ const preparePdf=async()=>{
+  if(!request?.requestId||request.status!=='completed') {setPdfError('Consulte novamente o pedido SIC para gerar a minuta.');return;}
+  setPdfBusy(true);setPdfError('');
+  try{
+   const prepared=await apiPost('/.netlify/functions/acceptance-draft',{requestId:request.requestId});
+   if(!prepared.draftId)throw Error('Rascunho sem identificador.');
+   setDraft(prepared);
+   const document=await apiPost('/.netlify/functions/review-document',{draftId:prepared.draftId});
+   if(!document.documentId||!document.sha256)throw Error('Documento não registrado corretamente.');
+   setReview(document);
+  }catch(e){setPdfError(e.message||'Falha ao gerar minuta.');}
+  finally{setPdfBusy(false);}
+ };
+ const downloadPdf=async()=>{
+  if(!draft?.draftId||!review?.documentId)return;
+  setPdfBusy(true);setPdfError('');
+  try{await apiDownloadPdf('/.netlify/functions/review-document?draftId='+draft.draftId+'&download=1','DRAFER-minuta-'+number+'-v'+review.version+'.pdf');}
+  catch(e){setPdfError(e.message||'Falha no download.');}
+  finally{setPdfBusy(false);}
+ };
  const items=order?.itens||[];
  const missingPrintCode=items.some(i=>printCode(i)==null);
  return <section className="space-y-5">
@@ -249,6 +273,16 @@ export default function VendorWorkflow(){
     </div>
     <div className="text-sm"><p><strong>Status:</strong> {simpleStatus[status?.state]||status?.state||'Consultando...'}</p>
      {status?.acceptances?.map(a=><p key={a.id} className="mt-2">Assinado: {field(a.signerName)} — {date(a.acceptedAt)} — SHA-256: <code className="break-all">{a.signatureSha256}</code></p>)}
+    </div>
+    <div className="border-t pt-3 space-y-2">
+     <h4 className="font-semibold">PDF preliminar — revisão interna</h4>
+     <p className="text-sm text-slate-600">Geração privada e versionada, com SHA-256. Não é documento assinado e não pode ser enviado ao cliente.</p>
+     <div className="flex flex-wrap gap-2">
+      <button type="button" disabled={pdfBusy||request?.status!=='completed'} onClick={preparePdf} className="border rounded px-4 py-2 disabled:opacity-50">{pdfBusy?'Processando...':'Gerar PDF preliminar'}</button>
+      {review&&<button type="button" disabled={pdfBusy} onClick={downloadPdf} className="border rounded px-4 py-2 disabled:opacity-50">Baixar PDF preliminar</button>}
+     </div>
+     {review&&<div className="text-xs text-slate-700 break-all" role="status">Minuta v{review.version} · SHA-256: {review.sha256} · Uso interno, sem assinatura.</div>}
+     {pdfError&&<p role="alert" className="text-sm text-red-700">{pdfError}</p>}
     </div>
     <div className="border-t pt-3 space-y-2">
      <h4 className="font-semibold">Gerar e compartilhar aceite</h4>
