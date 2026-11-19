@@ -1,3 +1,4 @@
+import { LEGAL_SECTIONS, LEGAL_CONSENT, LEGAL_TITLE, LEGAL_VERSION } from './legalTermRevised';
 /**
  * Gera exclusivamente uma MINUTA PARA REVISAO INTERNA.
  * Nao cria aceite nem token, nao altera SIC/Supabase e nao confirma elegibilidade.
@@ -92,23 +93,14 @@ export async function exportAcceptanceDraft({ pedido, itens, validacao }) {
   paragraph('Conferencia aritmetica da API SIC: ' +
     (validacao.valido === true ? 'APROVADA' : 'NAO APROVADA'));
 
-  paragraph('2. DECLARACOES PROPOSTAS - SUJEITAS A REVISAO JURIDICA', { size: 12, bold: true });
-  paragraph('2.1 O cliente devera conferir os produtos, especificacoes, quantidades e informacoes do pedido antes de eventual autorizacao de fabricacao.');
-  paragraph('2.2 Materiais fabricados sob medida poderao exigir condicoes especificas de alteracao, cancelamento ou devolucao. O alcance dessas condicoes depende da legislacao e da aprovacao juridica do Grupo Drafer.');
-  paragraph('2.3 Procedimentos de transporte, recebimento, armazenagem, manuseio e instalacao devem observar as orientacoes tecnicas aplicaveis ao material fornecido.');
-  paragraph('2.4 As condicoes de garantia, prazo, limitacoes e responsabilidades devem ser aquelas constantes da versao juridicamente aprovada do Termo de Garantia, Armazenagem, Manuseio e Instalacao de Telhas.');
-  paragraph('2.5 O aceite juridico somente podera ocorrer apos o documento final aprovado ser exibido integralmente ao cliente e a plataforma registrar sua manifestacao de vontade e evidencias de integridade.');
-
-  paragraph('3. CHECKLIST DE HOMOLOGACAO - PENDENCIAS', { size: 12, bold: true });
-  paragraph('[ ] Confirmar regras de codigos alternativos do campo de pesquisa do SIC quando necessario; priorizar o codigo comercial do cadastro.');
-  paragraph('[x] Identificados no SIC os campos PESO_LIQUIDO, QTDE_PC e VUNIT_PC.');
-  paragraph('[ ] Homologar regra de unidade comercial e conversoes por familia de produto.');
-  paragraph('[ ] Confirmar correspondencia do codigo SITU no SIC com o fluxo comercial.');
-  paragraph('[ ] Confirmar documentos e identificacao da empresa emitente.');
-  paragraph('[ ] Aprovar juridicamente o teor integral do termo de garantia.');
-  paragraph('[ ] Definir politica comercial de cancelamento, devolucao e fabricacao sob medida.');
-  paragraph('[ ] Habilitar geracao do PDF final com hash e registro no Supabase.');
-  paragraph('[ ] Validar aceite eletronico, prova de consentimento e trilha de auditoria.');
+  paragraph(LEGAL_TITLE, { size: 13, bold: true });
+  paragraph('Versao do termo: ' + LEGAL_VERSION + ' - minuta para homologacao unica.', { bold: true });
+  LEGAL_SECTIONS.forEach(([heading, paragraphs], index) => {
+    paragraph((index + 1) + '. ' + heading, { size: 12, bold: true });
+    paragraphs.forEach(text => paragraph(text));
+  });
+  paragraph('DECLARACAO DE CONFERENCIA E ACEITE - SOMENTE MINUTA', { size: 12, bold: true });
+  LEGAL_CONSENT.forEach(text => paragraph(text));
 
   paragraph('AVISO: ESTA MINUTA NAO AUTORIZA FABRICACAO, NAO SUBSTITUI O CONTRATO/PEDIDO ORIGINAL E NAO PODE SER UTILIZADA PARA COLETA DE ASSINATURA.', { bold: true });
   const pages = doc.getNumberOfPages();
