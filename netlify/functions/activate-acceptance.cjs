@@ -29,10 +29,15 @@ exports.handler=async event=>{
     typeof p.cliente?.nome!=='string'||p.cliente.nome.trim().length<2||
     !String(p.nomeEmpresa||p.razaoSocialEmpresa||'').trim()||
     !String(p.tipoVenda||p.tipoVendaDescricao||p.tipoVendaCodigo||'').trim()||
-    !String(p.localEntrega||p.enderecoEntrega||'').trim()||
+    !(String(p.localEntrega||p.enderecoEntrega||'').trim() ||
+      (p.enderecoEntregaConfirmado === true && p.enderecoPrincipalCadastrado &&
+       typeof p.enderecoPrincipalCadastrado === 'object' &&
+       String(p.enderecoPrincipalCadastrado.endereco||'').trim()))||
     items.some(i=>!i||typeof i.descricao!=='string'||!i.descricao.trim()||
       !Number.isFinite(numeric(i.valorTotal))||numeric(i.valorTotal)<0))
    throw invalid('Espelho SIC incompleto ou pedido nao elegivel para aceite');
+  if(p.enderecoEntregaConfirmado===false && !String(p.localEntrega||p.enderecoEntrega||'').trim())
+   throw invalid('O SIC nao confirmou endereco de entrega para este pedido. Revise a informacao na origem antes de emitir o aceite');
   const approved=await supabaseFetch('/rest/v1/aceite_legal_versions?version=eq.'+
    encodeURIComponent(legal.version)+'&content_sha256=eq.'+hash+
    '&status=eq.homologado&select=id&limit=1');
