@@ -90,6 +90,7 @@ exports.handler = async (event) => {
         level: item.level,
         mirror,
         mirrorComplete,
+        signingEnabled: false, // Never infer readiness from the existence of a token.
       },
     });
   } catch (error) {
