@@ -16,9 +16,9 @@ $targets=@(
  @{
   Path='src\services\espelhoService.js'
   Source='server-patches/espelhoService.js'
-  Commit='4be1bb732611da484b162bf1dcb8570aaa9cb042'
-  Hash='b50c5fbfe02112df837ee419076f46d324dd0d34'
-  AllowedPrevious='fa07411477be9999102713430ee45405a24c940b'
+  Commit='12d978de6843d0a3f600d9a77069e4a035e4feda'
+  Hash='b4d8fbc99e755619fb918f6bd430b4a2775a5fcf'
+  AllowedPrevious='b50c5fbfe02112df837ee419076f46d324dd0d34'
  },
  @{
   Path='src\services\espelhoMerge.js'
