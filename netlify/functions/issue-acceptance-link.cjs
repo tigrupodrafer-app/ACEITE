@@ -28,15 +28,12 @@ exports.handler=async(event)=>{
     encodeURIComponent(legal.version)+'&content_sha256=eq.'+legalHash+
     '&status=eq.homologado&select=id&limit=1');
   if(approved?.length!==1)throw invalid('Versao juridica nao homologada');
-  const existing=await supabaseFetch('/rest/v1/aceite_tokens?order_id=eq.'+o.id+
-    '&level=eq.1&used_at=is.null&revoked_at=is.null&expires_at=gt.'+
-    encodeURIComponent(new Date().toISOString())+'&select=id&limit=1');
-  if(existing?.length)throw invalid('Ja existe link ativo; revogue antes de gerar outro');
   const raw=randomBytes(32).toString('hex');
   const expiresAt=new Date(Date.now()+48*60*60*1000).toISOString();
-  await supabaseFetch('/rest/v1/aceite_tokens',{method:'POST',body:{
-    order_id:o.id,level:1,token_hash:sha256(raw),expires_at:expiresAt
-  }});
+  const issued=await supabaseFetch('/rest/v1/rpc/aceite_emitir_token_atomico',{
+    method:'POST',body:{p_order_id:o.id,p_token_hash:sha256(raw),
+      p_expires_at:expiresAt,p_legal_version:legal.version,p_legal_sha256:legalHash}});
+  if(!issued?.issued)throw invalid('Link nao registrado');
   return respond(201,{token:raw,expiresAt,relativeUrl:'/AssinarAceite?token='+raw,
     message:'Link pessoal: compartilhe somente com o cliente correto.'});
  }catch(error){return handleError(error)}
