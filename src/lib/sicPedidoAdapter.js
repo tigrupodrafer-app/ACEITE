@@ -77,6 +77,8 @@ export function adaptarPedidoSic(resposta) {
     tipoVenda: clean(p.tipoVenda),
     tipoVendaCodigo: clean(p.tipoVendaCodigo),
     enderecoCadastral,
+    // Só expor endereço de entrega quando houver dados específicos da entrega.
+    enderecoEntrega: clean(p.enderecoEntrega?.endereco || p.localEntrega?.endereco || p.enderecoEntregaTexto),
     enderecoEntregaConfirmado,
     espelhoHomologacao: {
       schema: clean(homologacao.schema),
