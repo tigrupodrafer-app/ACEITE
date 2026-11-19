@@ -228,6 +228,7 @@ export default function VendorWorkflow(){
    const prepared=await apiPost('/.netlify/functions/acceptance-draft',{requestId:request.requestId});
    if(!prepared.draftId)throw Error('Rascunho sem identificador.');
    setDraft(prepared);
+   await refreshStatus(number);
    const document=await apiPost('/.netlify/functions/review-document',{draftId:prepared.draftId});
    if(!document.documentId||!document.sha256)throw Error('Documento não registrado corretamente.');
    setReview(document);
@@ -291,6 +292,17 @@ export default function VendorWorkflow(){
   catch(e){setLinkError(e.message||'Não foi possível registrar a homologação.');}
   finally{setLegalBusy(false);}
  };
+ const activateAcceptance=async()=>{
+  const id=status?.orderId||draft?.draftId;
+  if(!id){setLinkError('Gere primeiro o aceite a partir do pedido SIC.');return;}
+  if(!window.confirm('Você conferiu o espelho integral do pedido SIC e confirma que está correto para envio ao cliente?'))return;
+  setLinkBusy(true);setLinkError('');
+  try{
+   await apiPost('/.netlify/functions/activate-acceptance',{orderId:id,confirmed:true});
+   await refreshStatus(number);
+  }catch(e){setLinkError(e.message||'Não foi possível habilitar o aceite.');}
+  finally{setLinkBusy(false);}
+ };
  const items=order?.itens||[];
  const missingPrintCode=items.some(i=>printCode(i)==null);
  return <section className="space-y-5">
@@ -350,6 +362,7 @@ export default function VendorWorkflow(){
       <button type="button" disabled={legalBusy||Boolean(legalApproval?.approved)} onClick={homologateLegal} className="border rounded px-3 py-2 disabled:opacity-50">{legalBusy?'Registrando...':'Registrar homologação da versão revisada'}</button>
       {legalApproval?.approved&&<p role="status" className="text-green-800 break-all">Homologada: {legalApproval.version} — SHA-256: {legalApproval.sha256}</p>}
      </div>
+     <button type="button" disabled={linkBusy||!(status?.orderId||draft?.draftId)||status?.state==='assinado'} onClick={activateAcceptance} className="border rounded px-4 py-2 disabled:opacity-50">Conferi o pedido SIC — habilitar aceite</button>
      <p className="text-sm text-amber-900">O servidor só emitirá o link após validar o espelho integral, a elegibilidade e a versão jurídica homologada. Nenhuma aprovação individual por pedido é exigida.</p>
      <div className="flex flex-wrap gap-2">
       <button type="button" disabled={linkBusy||!status?.orderId||status?.state==='assinado'} onClick={issueLink} className="bg-slate-900 text-white disabled:bg-slate-300 disabled:text-slate-600 rounded px-4 py-2 inline-flex gap-2 items-center"><FileText className="w-4 h-4"/>Gerar link do cliente</button>
