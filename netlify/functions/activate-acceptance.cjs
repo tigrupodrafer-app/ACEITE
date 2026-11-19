@@ -18,6 +18,8 @@ exports.handler=async event=>{
   const rows=await supabaseFetch('/rest/v1/aceite_orders?id=eq.'+input.orderId+
    '&select=id,status,origin,sic_company_id,sic_order_number,order_snapshot,details&limit=1');
   const o=rows?.[0],s=o?.order_snapshot,p=s?.pedidoCompleto,items=s?.itens;
+  if(p?.enderecoEntregaConfirmado===false && !String(p.localEntrega||p.enderecoEntrega||'').trim())
+   throw invalid('O SIC nao confirmou endereco de entrega. Confirme na origem antes de emitir o aceite');
   if(!o||o.origin!=='SIC_SUPRASYS'||o.status!=='rascunho'||o.details?.draftOnly!==true||
     !p||!Array.isArray(items)||!items.length||items.length>200||
     String(p.numero)!==String(o.sic_order_number)||
@@ -36,8 +38,6 @@ exports.handler=async event=>{
     items.some(i=>!i||typeof i.descricao!=='string'||!i.descricao.trim()||
       !Number.isFinite(numeric(i.valorTotal))||numeric(i.valorTotal)<0))
    throw invalid('Espelho SIC incompleto ou pedido nao elegivel para aceite');
-  if(p.enderecoEntregaConfirmado===false && !String(p.localEntrega||p.enderecoEntrega||'').trim())
-   throw invalid('O SIC nao confirmou endereco de entrega para este pedido. Revise a informacao na origem antes de emitir o aceite');
   const approved=await supabaseFetch('/rest/v1/aceite_legal_versions?version=eq.'+
    encodeURIComponent(legal.version)+'&content_sha256=eq.'+hash+
    '&status=eq.homologado&select=id&limit=1');
