@@ -25,9 +25,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 print:p-0 print:min-h-0 print:bg-white">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8 flex flex-wrap gap-4 justify-between items-center">
+        <div className="mb-8 flex flex-wrap gap-4 justify-between items-center print:hidden">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-slate-900">ACEITE DRAFER</h1>
             <p className="text-slate-600 mt-1">Consulta de pedidos e emissão de aceites — SIC SupraSYS</p>
@@ -42,16 +42,16 @@ export default function Dashboard() {
           Não foi possível carregar pedidos: {error?.message}
         </div>}
         <VendorWorkflow />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 print:hidden">
           <StatsCards icon={FileText} title="Pedidos carregados" value={isLoading ? '—' : stats.total} color="text-blue-600" />
           <StatsCards icon={Loader2} title="Em fabricação" value={isLoading ? '—' : stats.fabricacao} color="text-yellow-600" />
           <StatsCards icon={AlertCircle} title="Aguardando aceite" value={isLoading ? '—' : stats.pendentes} color="text-red-600" />
           <StatsCards icon={CheckCircle2} title="Concluídos" value={isLoading ? '—' : stats.concluidos} color="text-green-600" />
         </div>
-        <p className="text-xs text-slate-500 mb-4">
+        <p className="text-xs text-slate-500 mb-4 print:hidden">
           Exibindo até 100 pedidos da base Supabase. O cadastro e a visualização detalhada ainda estão em migração.
         </p>
-        <Card className="shadow-lg">
+        <Card className="shadow-lg print:hidden">
           <CardHeader className="border-b bg-slate-50"><CardTitle>Pedidos registrados</CardTitle></CardHeader>
           <CardContent className="p-0">
             {isError ? <p className="p-6">Pedidos indisponíveis.</p> :
