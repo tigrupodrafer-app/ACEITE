@@ -229,7 +229,7 @@ export default function VendorWorkflow(){
    if(!prepared.draftId)throw Error('Rascunho sem identificador.');
    setDraft(prepared);
    await refreshStatus(number);
-   const document=await apiPost('/.netlify/functions/review-document',{draftId:prepared.draftId});
+   const document=await apiPost('/.netlify/functions/review-document',{draftId:prepared.draftId,newVersion:prepared.refreshed===true});
    if(!document.documentId||!document.sha256)throw Error('Documento não registrado corretamente.');
    setReview(document);
   }catch(e){setPdfError(e.message||'Falha ao gerar minuta.');}
