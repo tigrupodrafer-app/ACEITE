@@ -8,7 +8,6 @@ import Login from '@/pages/Login';
 import PublicAcceptance from '@/pages/PublicAcceptance';
 import Dashboard from '@/pages/Dashboard';
 import Layout from '@/Layout';
-import ApproverHome from '@/pages/ApproverHome';
 import AcceptancePresentation from '@/pages/AcceptancePresentation';
 import DemoLab from '@/pages/DemoLab';
 import DemoSign from '@/pages/DemoSign';
@@ -33,7 +32,6 @@ function PrivatePage({ children }) {
     );
   }
   if (!isAuthenticated) return <Navigate to="/Login" state={{ from: location.pathname }} replace />;
-  if (user?.role === 'aprovador') return <ApproverHome />;
   return <Layout currentPageName="Dashboard">{children}</Layout>;
 }
 
