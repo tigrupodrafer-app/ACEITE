@@ -31,10 +31,7 @@ exports.handler=async event=>{
     typeof p.cliente?.nome!=='string'||p.cliente.nome.trim().length<2||
     !String(p.nomeEmpresa||p.razaoSocialEmpresa||'').trim()||
     !String(p.tipoVenda||p.tipoVendaDescricao||p.tipoVendaCodigo||'').trim()||
-    !(String(p.localEntrega||p.enderecoEntrega||'').trim() ||
-      (p.enderecoEntregaConfirmado === true && p.enderecoPrincipalCadastrado &&
-       typeof p.enderecoPrincipalCadastrado === 'object' &&
-       String(p.enderecoPrincipalCadastrado.endereco||'').trim()))||
+    !String(p.localEntrega||p.enderecoEntrega||'').trim()||
     items.some(i=>!i||typeof i.descricao!=='string'||!i.descricao.trim()||
       !Number.isFinite(numeric(i.valorTotal))||numeric(i.valorTotal)<0))
    throw invalid('Espelho SIC incompleto ou pedido nao elegivel para aceite');
