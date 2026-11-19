@@ -5,7 +5,7 @@ import { adaptarPedidoSic, validarCpfCnpj } from '../src/lib/sicPedidoAdapter.js
 const base = () => ({
   sucesso: true,
   pedido: {
-    numero: 352688, empresa: 1, dataPedido: '2026-11-18',
+    numero: 352688, empresa: 1, razaoSocialEmpresa: 'Empresa Teste', liberado: 'S', dataPedido: '2026-11-18',
     cliente: { codigo: 1, nome: 'Cliente Teste', cnpjCpf: '52998224725', cidade: 'Cidade', uf: 'SP' },
     valores: { subtotal: 120, desconto: 20, total: 100 },
     enderecoPrincipalCadastrado: { endereco: 'Rua Teste', numero: '10' },
@@ -69,5 +69,22 @@ test('bloqueia itens sem valor comercial', () => {
 
 test('bloqueia divergência na contagem da validação financeira', () => {
   const r = base(); r.validacao.quantidadeItens = 1;
+  assert.equal(adaptarPedidoSic(r).aptoParaPreparacao, false);
+});
+
+test('pedido não liberado não pode seguir para preparação', () => {
+  const r = base(); r.pedido.liberado = 'N';
+  assert.equal(adaptarPedidoSic(r).aptoParaPreparacao, false);
+});
+test('endereço de entrega não confirmado impede preparação', () => {
+  const r = base(); r.pedido.enderecoEntregaConfirmado = false;
+  assert.equal(adaptarPedidoSic(r).aptoParaPreparacao, false);
+});
+test('empresa ausente impede preparação', () => {
+  const r = base(); delete r.pedido.razaoSocialEmpresa;
+  assert.equal(adaptarPedidoSic(r).aptoParaPreparacao, false);
+});
+test('valores negativos são recusados', () => {
+  const r = base(); r.pedido.valores.total = -100;
   assert.equal(adaptarPedidoSic(r).aptoParaPreparacao, false);
 });
