@@ -56,7 +56,7 @@ function safeForExport(v) {
 }
 
 export default function SicLookup() {
-  const [orderNumber, setOrderNumber] = useState('352488');
+  const [orderNumber, setOrderNumber] = useState('');
   const [requestId, setRequestId] = useState('');
   const [state, setState] = useState(null);
   const [submitting, setSubmitting] = useState(false);
