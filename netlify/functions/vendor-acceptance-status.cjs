@@ -5,7 +5,7 @@ const invalid=(message,statusCode=400)=>Object.assign(new Error(message),{status
 exports.handler=async event=>{
  try{
   onlyMethod(event,'GET');
-  await requireStaff(event,{allowedRoles:['admin','vendedor']});
+  await requireStaff(event,{allowedRoles:['admin','vendedor','aprovador']});
   const number=String(event.queryStringParameters?.number||'');
   if(!/^[1-9]\d{0,11}$/.test(number))throw invalid('Número do pedido inválido');
   const rows=await supabaseFetch('/rest/v1/aceite_orders?origin=eq.SIC_SUPRASYS&sic_order_number=eq.'+
