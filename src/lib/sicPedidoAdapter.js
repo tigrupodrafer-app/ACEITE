@@ -31,11 +31,17 @@ export function adaptarPedidoSic(resposta) {
   const valores = p.valores || {};
   const itens = Array.isArray(p.itens) ? p.itens : [];
   const endereco = p.enderecoPrincipalCadastrado || {};
+  const enderecoEntregaConfirmado = p.enderecoEntregaConfirmado === true;
+  const homologacao = p._espelhoHomologacao || {};
+  const camposFaltantes = String(homologacao.faltam || '').trim();
   const pendencias = [];
   if (!clean(cliente.nome)) pendencias.push('Nome do cliente não cadastrado.');
   if (!clean(cliente.cnpjCpf)) pendencias.push('CPF/CNPJ ausente no cadastro SIC.');
   else if (!validarCpfCnpj(cliente.cnpjCpf)) pendencias.push('CPF/CNPJ inválido (dígitos verificadores).');
   if (!itens.length) pendencias.push('Pedido sem itens.');
+  if (camposFaltantes && !/^(nenhum|nenhuma|nao|não|0|\[\])$/i.test(camposFaltantes)) {
+    pendencias.push('Espelho SIC informa campos faltantes; conferir homologação.');
+  }
   if (!resposta.validacao || resposta.validacao.valido !== true ||
       (Array.isArray(resposta.validacao.avisos) && resposta.validacao.avisos.length)) {
     pendencias.push('Validação financeira do SIC não aprovada.');
@@ -64,13 +70,30 @@ export function adaptarPedidoSic(resposta) {
     tipoVenda: clean(p.tipoVenda),
     tipoVendaCodigo: clean(p.tipoVendaCodigo),
     enderecoCadastral,
-    enderecoEntregaConfirmado: endereco.enderecoEntregaConfirmado === true,
+    enderecoEntregaConfirmado,
+    espelhoHomologacao: {
+      schema: clean(homologacao.schema),
+      camposFaltantes,
+      somenteLeitura: homologacao.somenteLeitura === true,
+      codigoImpressaoHomologado: homologacao.codigoImpressaoHomologado === true
+    },
     itens: itens.map(item => ({
-      item: item.item, codigo: item.codigoProduto, descricao: clean(item.descricao),
+      item: item.item, codigo: item.codigoProduto,
+      codigoInterno: item.codigoProdutoInterno,
+      codigoComercial: item.codigoProdutoComercial,
+      referenciaFornecedor: clean(item.referenciaFornecedor),
+      descricao: clean(item.descricao),
       unidade: clean(item.unidade), quantidade: item.quantidade,
       valorUnitario: item.valorUnitario, valorTotal: item.valorTotal,
-      quantidadePecas: item.quantidadePecas, pesoLiquidoKg: item.pesoLiquidoKg
+      quantidadePecas: item.quantidadePecas, pesoLiquidoKg: item.pesoLiquidoKg,
+      pesoBrutoKg: item.pesoBrutoKg, valorUnitarioPeca: item.valorUnitarioPeca,
+      pesoPorPeca: item.pesoPorPeca
     })),
+    quantidadeItens: p.quantidadeItens,
+    validacaoFinanceira: resposta.validacao,
+    codigoVendedor: p.codigoVendedor,
+    tabelaPreco: p.tabelaPreco,
+    codigoCondicaoPagamentoCadastral: p.codigoCondicaoPagamentoCadastral,
     valores: { subtotal: valores.subtotal, desconto: valores.desconto,
       total: valores.total, frete: p.frete },
     pendencias,
