@@ -217,7 +217,7 @@ export default function VendorWorkflow(){
     body * { visibility: hidden !important; }
     #drafer-print-document, #drafer-print-document * { visibility: visible !important; }
     #drafer-print-document { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
-    #drafer-print-document article { break-after: page; }
+    #drafer-print-document > :not(article):not(section) { display: none !important; }\n    #drafer-print-document > article { break-after: page; }
     #drafer-print-document section { margin-top: 0 !important; }
     #drafer-print-document table { width: 100% !important; min-width: 0 !important; }
     #drafer-print-document tr { break-inside: avoid; }
