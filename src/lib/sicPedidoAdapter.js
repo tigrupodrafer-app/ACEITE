@@ -39,6 +39,7 @@ export function adaptarPedidoSic(resposta) {
   if (!clean(cliente.cnpjCpf)) pendencias.push('CPF/CNPJ ausente no cadastro SIC.');
   else if (!validarCpfCnpj(cliente.cnpjCpf)) pendencias.push('CPF/CNPJ inválido (dígitos verificadores).');
   if (!itens.length) pendencias.push('Pedido sem itens.');
+  if (p.quantidadeItens != null && p.quantidadeItens !== itens.length) pendencias.push('Quantidade de itens divergente do cabeçalho SIC.');
   if (camposFaltantes && !/^(nenhum|nenhuma|nao|não|0|\[\])$/i.test(camposFaltantes)) {
     pendencias.push('Espelho SIC informa campos faltantes; conferir homologação.');
   }
@@ -50,10 +51,11 @@ export function adaptarPedidoSic(resposta) {
     pendencias.push('Valores comerciais ausentes ou inválidos.');
   }
   for (const [i, item] of itens.entries()) {
-    if (!clean(item.descricao) || !finite(item.quantidade) || item.quantidade <= 0) {
+    if (!clean(item.descricao) || !finite(item.quantidade) || item.quantidade <= 0 || !finite(item.valorUnitario) || !finite(item.valorTotal)) {
       pendencias.push('Item ' + (i + 1) + ' incompleto.');
     }
   }
+  if (resposta.validacao?.quantidadeItens != null && resposta.validacao.quantidadeItens !== itens.length) pendencias.push('Quantidade de itens divergente da validação SIC.');
   const enderecoCadastral = [endereco.endereco, endereco.numero, endereco.bairro,
     cliente.cidade, cliente.uf, endereco.cep].map(clean).filter(Boolean).join(', ');
   return {
