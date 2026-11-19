@@ -47,28 +47,28 @@ export default function PublicAcceptance() {
           </div>
         )}
 
-        <section className="mt-6 border rounded-lg p-4 space-y-3">
+        {result.order && <section className="mt-6 border rounded-lg p-4 space-y-3">
           <h2 className="font-semibold text-lg">Espelho completo do pedido SIC</h2>
           <p className="text-sm text-amber-800">A API pública ainda não disponibiliza o espelho integral. Campos pendentes não serão presumidos; assinatura bloqueada.</p>
           <div className="grid sm:grid-cols-2 gap-2 text-sm">{['Razão social e CNPJ da empresa','CPF/CNPJ do cliente','Comprador','Tipo de venda','Endereço de entrega','Condição de pagamento e vencimentos','Código comercial dos itens','Valores unitários e totais'].map(field=><p key={field}><strong>{field}:</strong> Pendente de integração SIC</p>)}</div>
-        </section>
-        <section className="mt-6 space-y-3">
+        </section>}
+        {!result.error && <section className="mt-6 space-y-3">
           <div className="flex items-center justify-between"><h2 className="font-semibold text-lg">Termo jurídico — 13 tópicos</h2><button type="button" className="border rounded px-3 py-2 text-sm" onClick={()=>setExpanded(expanded.length===13?[]:Array.from({length:13},(_,i)=>i))}>{expanded.length===13?'Recolher todos':'Expandir todos'}</button></div>
           {LEGAL_SECTIONS.map((section,i)=><div key={i} className="border rounded-lg">
             <button type="button" className="w-full flex justify-between items-center text-left p-3 font-medium" aria-expanded={expanded.includes(i)} onClick={()=>setExpanded(v=>v.includes(i)?v.filter(x=>x!==i):[...v,i])}><span>{i+1}. {section[0]}</span>{expanded.includes(i)?<ChevronUp size={18}/>:<ChevronDown size={18}/>}</button>
             {expanded.includes(i)&&<p className="border-t p-3 text-sm text-slate-700">{section[1]}</p>}
           </div>)}
-        </section>
-        <section className="mt-6 border-t pt-4 space-y-3">
+        </section>}
+        {result.order && <section className="mt-6 border-t pt-4 space-y-3">
           <h2 className="font-semibold text-lg">Declaração de conferência e aceite</h2>
           <p className="text-sm">Declaro que conferi o espelho integral do pedido, conheço as condições de fornecimento e garantia e, quando aplicável, autorizo a fabricação dos produtos personalizados, preservados meus direitos legais.</p>
           {['Li e conferi o espelho integral do pedido.','Li e concordo com as condições comerciais e o termo.','Autorizo a fabricação dos produtos personalizados, quando aplicável.'].map(t=><label key={t} className="flex gap-2 text-sm"><input type="checkbox" disabled/>{t}</label>)}
           <button type="button" disabled className="w-full rounded bg-slate-200 text-slate-500 p-3">Confirmar aceite e assinar — aguardando homologação</button>
-        </section>
-        <div className="bg-amber-50 border border-amber-200 p-4 mt-6 rounded flex gap-3 text-amber-900">
+        </section>}
+        {!result.error && <div className="bg-amber-50 border border-amber-200 p-4 mt-6 rounded flex gap-3 text-amber-900">
           <AlertTriangle className="shrink-0 w-6 h-6" />
           <p>Ambiente de migração: a assinatura permanece desabilitada até a homologação jurídica, de segurança e do registro de evidências.</p>
-        </div>
+        </div>}
       </section>
     </main>
   );
