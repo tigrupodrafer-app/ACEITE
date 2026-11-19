@@ -104,6 +104,10 @@ export default function VendorWorkflow(){
  const [status,setStatus]=useState(null);
  const [draft,setDraft]=useState(null);
  const [review,setReview]=useState(null);
+ const [customerLink,setCustomerLink]=useState('');
+ const [linkBusy,setLinkBusy]=useState(false);
+ const [linkError,setLinkError]=useState('');
+ const [evidence,setEvidence]=useState(null);
  const [pdfBusy,setPdfBusy]=useState(false);
  const [pdfError,setPdfError]=useState('');
  const [working,setWorking]=useState(false);
@@ -153,7 +157,7 @@ export default function VendorWorkflow(){
   const query=number.trim();
   if(!/^[1-9]\d{0,11}$/.test(query)){setError('Informe um número de pedido válido.');return;}
   const seq=++querySequence.current;
-  setOrder(null);setStatus(null);setRequest(null);setDraft(null);setReview(null);setPdfError('');setError('');setLoadingError('');
+  setOrder(null);setStatus(null);setRequest(null);setDraft(null);setReview(null);setCustomerLink('');setEvidence(null);setLinkError('');setPdfError('');setError('');setLoadingError('');
   setElapsed(0);startedAt.current=Date.now();
   setLoadingPhase('enviando');setWorking(true);
   try{
@@ -233,6 +237,24 @@ export default function VendorWorkflow(){
   catch(e){setPdfError(e.message||'Falha no download.');}
   finally{setPdfBusy(false);}
  };
+ const issueLink=async()=>{
+  if(!status?.orderId){setLinkError('Registre primeiro o pedido e confirme a elegibilidade.');return;}
+  setLinkBusy(true);setLinkError('');
+  try{
+   const result=await apiPost('/.netlify/functions/issue-acceptance-link',{orderId:status.orderId});
+   if(!result.relativeUrl)throw Error('O servidor não retornou o endereço do cliente.');
+   setCustomerLink(new URL(result.relativeUrl,window.location.origin).toString());
+   await refreshStatus(number);
+  }catch(e){setLinkError(e.message||'Não foi possível gerar o link.');}
+  finally{setLinkBusy(false);}
+ };
+ const verifyEvidence=async()=>{
+  if(!status?.orderId)return;
+  setLinkBusy(true);setLinkError('');
+  try{setEvidence(await apiGet('/.netlify/functions/seller-acceptance-evidence?orderId='+encodeURIComponent(status.orderId)));}
+  catch(e){setLinkError(e.message||'Não foi possível conferir as evidências.');}
+  finally{setLinkBusy(false);}
+ };
  const items=order?.itens||[];
  const missingPrintCode=items.some(i=>printCode(i)==null);
  return <section className="space-y-5">
@@ -286,12 +308,22 @@ export default function VendorWorkflow(){
     </div>
     <div className="border-t pt-3 space-y-2">
      <h4 className="font-semibold">Gerar e compartilhar aceite</h4>
-     <p className="text-sm text-amber-900">Emissão e link público permanecem bloqueados até a homologação do termo jurídico e das regras de negócio e segurança. A divergência do código de impressão no SIC não será investigada nesta etapa. O fluxo não exige aprovação individual por pedido.</p>
+     <p className="text-sm text-amber-900">O servidor só emitirá o link após validar o espelho integral, a elegibilidade e a versão jurídica homologada. Nenhuma aprovação individual por pedido é exigida.</p>
      <div className="flex flex-wrap gap-2">
-      <button type="button" disabled className="bg-slate-300 text-slate-700 rounded px-4 py-2 inline-flex gap-2 items-center"><FileText className="w-4 h-4"/>Gerar aceite</button>
-      <button type="button" disabled className="border rounded px-4 py-2 inline-flex gap-2 items-center"><Copy className="w-4 h-4"/>Copiar link</button>
-      <button type="button" disabled className="border rounded px-4 py-2 inline-flex gap-2 items-center"><MessageCircle className="w-4 h-4"/>WhatsApp</button>
+      <button type="button" disabled={linkBusy||!status?.orderId||status?.state==='assinado'} onClick={issueLink} className="bg-slate-900 text-white disabled:bg-slate-300 disabled:text-slate-600 rounded px-4 py-2 inline-flex gap-2 items-center"><FileText className="w-4 h-4"/>Gerar link do cliente</button>
+      <button type="button" disabled={!customerLink} onClick={()=>navigator.clipboard.writeText(customerLink).catch(()=>setLinkError('Não foi possível copiar o link.'))} className="border rounded px-4 py-2 inline-flex gap-2 items-center disabled:opacity-50"><Copy className="w-4 h-4"/>Copiar link</button>
+      <button type="button" disabled={!customerLink} onClick={()=>window.open('https://wa.me/?text='+encodeURIComponent('Confira e assine seu pedido DRAFER: '+customerLink),'_blank','noopener,noreferrer')} className="border rounded px-4 py-2 inline-flex gap-2 items-center disabled:opacity-50"><MessageCircle className="w-4 h-4"/>WhatsApp</button>
+      <button type="button" disabled={linkBusy||!status?.orderId} onClick={verifyEvidence} className="border rounded px-4 py-2 inline-flex gap-2 items-center disabled:opacity-50"><ShieldCheck className="w-4 h-4"/>Conferir assinatura</button>
      </div>
+     {customerLink&&<p className="text-xs break-all border rounded p-2" role="status">Link individual (compartilhe somente com o cliente): {customerLink}</p>}
+     {linkError&&<p role="alert" className="text-red-700 text-sm">{linkError}</p>}
+     {evidence&&<div className="border rounded p-3 text-sm space-y-1" role="status">
+       <p><strong>Assinado:</strong> {evidence.signed?'Sim':'Ainda não'}</p>
+       {evidence.signed&&<><p><strong>Assinante:</strong> {field(evidence.signerName)}</p><p><strong>Data:</strong> {date(evidence.acceptedAt)}</p>
+       <p><strong>Integridade da assinatura:</strong> {evidence.signatureIntegrity?'Verificada':'Não verificada — bloqueado'}</p>
+       <p className="break-all"><strong>SHA-256:</strong> {field(evidence.signatureSha256)}</p></>}
+       <p className="text-amber-900">Encaminhamento automático à produção desabilitado. Aguarda conferência e homologação final.</p>
+     </div>}
     </div>
    </div>
    <Term/>
