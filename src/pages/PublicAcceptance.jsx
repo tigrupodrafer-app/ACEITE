@@ -83,7 +83,6 @@ export default function PublicAcceptance() {
         </section>}
         {result.order && <section className="mt-6 border-t pt-4 space-y-3">
           <h2 className="font-semibold text-lg">Declaração de conferência e aceite</h2>
-          {LEGAL_CONSENT.map((paragraph,i)=><p key={i} className="text-sm">{paragraph}</p>)}
           {LEGAL_CONSENT.map((text,i)=><label key={i} className="flex gap-2 text-sm items-start"><input type="checkbox" className="mt-1" checked={consents[i]} onChange={event=>setConsents(old=>old.map((v,j)=>j===i?event.target.checked:v))}/><span>{text}</span></label>)}
           <p className="text-sm" role="status">{allConfirmed ? 'Três declarações confirmadas. A assinatura continua indisponível até a homologação.' : 'Marque as três declarações para concluir a conferência. A assinatura ainda não está habilitada.'}</p>
           <button type="button" disabled className="w-full rounded bg-slate-200 text-slate-500 p-3">Confirmar aceite e assinar — aguardando homologação</button>
