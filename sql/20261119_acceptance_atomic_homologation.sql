@@ -68,7 +68,8 @@ begin
  p_legal_sha256,accepted,left(p_user_agent,500),p_checklist
  ) returning id into a;
  update public.aceite_tokens set used_at=accepted where id=t.id;
- update public.aceite_orders set status='aceite_recebido',updated_at=accepted
+ -- Keep the order out of manufacturing until the seller verifies the evidence.
+ update public.aceite_orders set updated_at=accepted
  where id=o.id;
  insert into public.aceite_audit_events(order_id,actor_type,action,metadata,user_agent)
  values(o.id,'cliente','acceptance_signed',
