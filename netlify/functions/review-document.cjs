@@ -100,7 +100,8 @@ function pdfForReview(order, version) {
   p('1. ITENS CONSULTADOS NO SIC', { size: 12, bold: true });
   for (const [index, item] of items.entries()) {
     p((index + 1) + '. ' + clean(item.descricao), { bold: true });
-    p('Codigo de impressao: ' + display(item.codigoProdutoImpressao ?? item.codigoImpressao) +\n      ' | Codigo comercial: ' + display(item.codigoProdutoComercial) +
+    p('Codigo de impressao: ' + display(item.codigoProdutoImpressao ?? item.codigoImpressao) +
+      ' | Codigo comercial: ' + display(item.codigoProdutoComercial) +
       ' | Sequencia interna: ' + clean(item.codigoProdutoInterno ?? item.codigoProduto) +
       ' | Referencia fornecedor: ' + clean(item.referenciaFornecedor));
     p('Quantidade comercial: ' + quantity(item.quantidade) + ' ' + display(item.unidade) +
@@ -110,12 +111,14 @@ function pdfForReview(order, version) {
       ' | Por peca: ' + formatBRL(item.valorUnitarioPeca) +
       ' | Total item: ' + formatBRL(item.valorTotal));
   }
-  p('Frete: ' + formatBRL(pedido.valores?.frete ?? pedido.frete));\n  p('Subtotal: ' + formatBRL(pedido.valores?.subtotal) +
+  p('Frete: ' + formatBRL(pedido.valores?.frete ?? pedido.frete));
+  p('Subtotal: ' + formatBRL(pedido.valores?.subtotal) +
     ' | Desconto: ' + formatBRL(pedido.valores?.desconto) +
     ' | Total: ' + formatBRL(pedido.valores?.total), { bold: true });
   p('Conferencia aritmetica: ' + (validacao.valido === true ? 'APROVADA' : 'PENDENTE'));
 
-  pdf.addPage(); header(); y = 26;\n  p('GRUPO DRAFER - ' + legal.title, { size: 13, bold: true });
+  pdf.addPage(); header(); y = 26;
+  p('GRUPO DRAFER - ' + legal.title, { size: 13, bold: true });
   p('Versao juridica: ' + legal.version + ' - minuta para homologacao unica.', { bold: true });
   for (const [index, section] of legal.sections.entries()) {
     if (y > h - 40) { pdf.addPage(); header(); y = 26; }
