@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SicOrderLookup from '@/components/order/SicOrderLookup';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,6 +65,8 @@ export default function NewOrder() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
       <div className="max-w-2xl mx-auto">
+        <SicOrderLookup />
+        <div className="mt-8" />
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900">Novo Pedido</h1>
           <p className="text-slate-600 mt-2">Etapa {step} de 2</p>
