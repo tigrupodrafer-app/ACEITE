@@ -166,7 +166,7 @@ async function storageDownload(path) {
 }
 async function orderById(id) {
   const rows = await supabaseFetch(ORDER + '?id=eq.' + id +
-    '&select=id,order_number,origin,sic_company_id,sic_order_number,client_name,order_snapshot,status,details&limit=1');
+    '&select=id,order_number,origin,sic_company_id,sic_order_number,client_name,order_snapshot,status,details,updated_at&limit=1');
   return rows?.[0];
 }
 async function versions(id) {
@@ -198,8 +198,11 @@ exports.handler = async (event) => {
     }
     const docs = await versions(id);
     const latest = docs[0];
+    // A previously archived review cannot represent a newer SIC snapshot.
+    const stale = Boolean(latest && Date.parse(order.updated_at) > Date.parse(latest.created_at) + 1000);
     if (event.httpMethod === 'GET') {
       if (!latest) return respond(404, { error: 'Nenhuma minuta arquivada' });
+      if (stale) throw invalid('Espelho SIC atualizado. Gere uma nova minuta antes de baixar.', 409);
       if (event.queryStringParameters?.download === '1') {
         const bytes = await storageDownload(latest.storage_path);
         if (sha(bytes) !== latest.file_sha256.trim()) throw new Error('Document integrity check failed');
@@ -214,7 +217,7 @@ exports.handler = async (event) => {
         sha256: latest.file_sha256.trim(), createdAt: latest.created_at,
         reviewOnly: true, signingEnabled: false });
     }
-    if (latest && !newVersion) return respond(200, {
+    if (latest && !newVersion && !stale) return respond(200, {
       documentId: latest.id, version: latest.version,
       sha256: latest.file_sha256.trim(), createdAt: latest.created_at,
       reviewOnly: true, signingEnabled: false, created: false,
