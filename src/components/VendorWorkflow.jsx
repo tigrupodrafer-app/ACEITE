@@ -1,5 +1,6 @@
 import React,{useEffect,useState,useRef} from 'react';
 import OrderLoadingModal from '@/components/OrderLoadingModal';
+import { LEGAL_SECTIONS, LEGAL_CONSENT, LEGAL_TITLE } from '@/lib/legalTermRevised';
 import printCalc from '@/lib/sicPrintTotals.cjs';
 const {totalsForPrint,itemWeight}=printCalc;
 import {apiGet,apiPost} from '@/lib/apiClient';
@@ -81,32 +82,25 @@ function PrintedOrder({order,items}){
   <div className="border-t border-black px-2 py-2 text-sm">Não executamos serviços, apenas venda de mercadorias. De Acordo: Data____/____/______ RG____________ Ass.:_________________</div>
  </article>;
 }
-function Term({term}){
- return <section className="bg-white border rounded-lg p-4 sm:p-6 mt-5 space-y-4" aria-label="Termo de aceite integral">
-  <h3 className="text-lg font-bold">{term.heading}</h3>
-  <p className="text-sm rounded border border-amber-300 bg-amber-50 p-3 text-amber-900">Texto original em revisão. Esta prévia não pode ser assinada nem enviada ao cliente como documento definitivo.</p>
-  {(term.sections||[]).map((s,i)=><section key={i} className="space-y-2 text-sm">
-   <h4 className="font-bold">{s.heading}</h4>
-   {(s.paragraphs||[]).map((p,j)=><p key={j}>{p}</p>)}
-   {(s.lists||[]).map((l,j)=><div key={j}>{l.intro&&<p className="font-semibold">{l.intro}</p>}<ul className="list-disc pl-5">{(l.items||[]).map((v,k)=><li key={k}>{v}</li>)}</ul></div>)}
-   {(s.after||[]).map((a,j)=><p key={j} className="font-semibold">{a}</p>)}
-   {(s.subsections||[]).map((sub,j)=><div key={j}><p className="font-semibold">{sub.title}</p><p>{sub.text}</p><ul className="list-disc pl-5">{(sub.bullets||[]).map((v,k)=><li key={k}>{v}</li>)}</ul></div>)}
-  </section>)}
-  {(term.diagrams||[]).map((d,i)=><section key={i}><h4 className="font-bold text-sm">{d.title}</h4><pre className="overflow-x-auto whitespace-pre text-xs border p-2">{(d.lines||[]).join('\n')}</pre></section>)}
-  <h4 className="font-bold">Avisos legais</h4><ul className="text-sm list-disc pl-5">{(term.legalWarnings||[]).map((p,i)=><li key={i}>{p}</li>)}</ul>
-  <p className="font-semibold text-sm">Declaração original — somente revisão</p><p className="text-sm">{term.consent}</p>
-  <div className="border-2 border-dashed rounded-lg p-5 text-center text-sm text-slate-600">
-   <LockKeyhole className="h-6 w-6 mx-auto mb-2"/> Área de assinatura do cliente (habilitar somente após homologação do termo definitivo)
-  </div>
+function Term(){
+ const [expanded,setExpanded]=useState([]);
+ return <section className="bg-white border rounded-lg p-4 sm:p-6 mt-5 space-y-4" aria-label="Termo jurídico revisado">
+  <h3 className="text-lg font-bold">{LEGAL_TITLE}</h3>
+  <p className="text-sm rounded border border-amber-300 bg-amber-50 p-3 text-amber-900">Minuta v1.0 em homologação única. A assinatura e o envio definitivo permanecem bloqueados.</p>
+  <button type="button" className="border rounded px-3 py-2 text-sm print:hidden" onClick={()=>setExpanded(v=>v.length===LEGAL_SECTIONS.length?[]:LEGAL_SECTIONS.map((_,i)=>i))}>{expanded.length===LEGAL_SECTIONS.length?'Recolher todos':'Expandir todos'}</button>
+  {LEGAL_SECTIONS.map(([title,paragraphs],i)=><div key={i} className="border rounded-lg break-inside-avoid">
+   <button type="button" className="w-full text-left font-semibold p-3" aria-expanded={expanded.includes(i)} onClick={()=>setExpanded(v=>v.includes(i)?v.filter(x=>x!==i):[...v,i])}>{i+1}. {title} <span className="print:hidden">{expanded.includes(i)?'−':'+'}</span></button>
+   <div className={(expanded.includes(i)?'block':'hidden')+' print:block border-t p-3 space-y-2 text-sm'}>{paragraphs.map((p,j)=><p key={j}>{p}</p>)}</div>
+  </div>)}
+  <h4 className="font-semibold">Declaração de conferência e aceite</h4>
+  {LEGAL_CONSENT.map((p,i)=><p key={i} className="text-sm">{p}</p>)}
+  <div className="border-2 border-dashed rounded-lg p-5 text-center text-sm text-slate-600"><LockKeyhole className="h-6 w-6 mx-auto mb-2"/> Assinatura indisponível até a homologação e integração do espelho completo.</div>
  </section>;
 }
 export default function VendorWorkflow(){
  const [number,setNumber]=useState('');
  const [request,setRequest]=useState(null);
  const [order,setOrder]=useState(null);
- const [term,setTerm]=useState(null);
- const [termLoading,setTermLoading]=useState(true);
- const [termError,setTermError]=useState('');
  const [status,setStatus]=useState(null);
  const [working,setWorking]=useState(false);
  const [error,setError]=useState('');
@@ -116,15 +110,6 @@ export default function VendorWorkflow(){
  const startedAt=useRef(0);
  const querySequence=useRef(0);
  const pollingBusy=useRef(false);
- useEffect(()=>{
-  let active=true;
-  apiGet('/.netlify/functions/vendor-legal-preview').then(data=>{
-   if(active){setTerm(data);setTermError('');}
-  }).catch(()=>{
-   if(active){setTerm(null);setTermError('Não foi possível carregar o texto do termo. Confira sua conexão e atualize a página.');}
-  }).finally(()=>{if(active)setTermLoading(false);});
-  return()=>{active=false;};
- },[]);
  useEffect(()=>{
   if(!loadingPhase||loadingPhase==='erro')return;
   const timer=window.setInterval(()=>setElapsed(Math.floor((Date.now()-startedAt.current)/1000)),1000);
@@ -265,12 +250,7 @@ export default function VendorWorkflow(){
      </div>
     </div>
    </div>
-   {termLoading&&<div role="status" className="bg-white rounded-lg border p-6 flex gap-3 items-center text-slate-700 print:hidden">
-    <Loader2 className="w-6 h-6 animate-spin text-red-700" aria-hidden="true"/>
-    <span>Carregando cláusulas e anexos do termo de aceite...</span>
-   </div>}
-   {!termLoading&&termError&&<p role="alert" className="border border-red-200 bg-red-50 text-red-800 rounded-lg p-4 print:hidden">{termError}</p>}
-   {term&&<Term term={term}/>}
+   <Term/>
   </>}
  </section>;
 }
