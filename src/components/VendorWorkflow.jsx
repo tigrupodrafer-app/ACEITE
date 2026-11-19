@@ -108,6 +108,7 @@ export default function VendorWorkflow(){
  const [linkBusy,setLinkBusy]=useState(false);
  const [linkError,setLinkError]=useState('');
  const [evidence,setEvidence]=useState(null);
+ const [signedPdf,setSignedPdf]=useState(null);
  const [pdfBusy,setPdfBusy]=useState(false);
  const [pdfError,setPdfError]=useState('');
  const [working,setWorking]=useState(false);
@@ -157,7 +158,7 @@ export default function VendorWorkflow(){
   const query=number.trim();
   if(!/^[1-9]\d{0,11}$/.test(query)){setError('Informe um número de pedido válido.');return;}
   const seq=++querySequence.current;
-  setOrder(null);setStatus(null);setRequest(null);setDraft(null);setReview(null);setCustomerLink('');setEvidence(null);setLinkError('');setPdfError('');setError('');setLoadingError('');
+  setOrder(null);setStatus(null);setRequest(null);setDraft(null);setReview(null);setCustomerLink('');setEvidence(null);setSignedPdf(null);setLinkError('');setPdfError('');setError('');setLoadingError('');
   setElapsed(0);startedAt.current=Date.now();
   setLoadingPhase('enviando');setWorking(true);
   try{
@@ -255,6 +256,20 @@ export default function VendorWorkflow(){
   catch(e){setLinkError(e.message||'Não foi possível conferir as evidências.');}
   finally{setLinkBusy(false);}
  };
+ const generateSignedPdf=async()=>{
+  if(!status?.orderId)return;
+  setLinkBusy(true);setLinkError('');
+  try{setSignedPdf(await apiPost('/.netlify/functions/signed-acceptance-document',{orderId:status.orderId}));}
+  catch(e){setLinkError(e.message||'Não foi possível gerar o documento assinado.');}
+  finally{setLinkBusy(false);}
+ };
+ const downloadSignedPdf=async()=>{
+  if(!status?.orderId||!signedPdf)return;
+  setLinkBusy(true);setLinkError('');
+  try{await apiDownloadPdf('/.netlify/functions/signed-acceptance-document?orderId='+encodeURIComponent(status.orderId),'DRAFER-aceite-assinado-'+number+'.pdf');}
+  catch(e){setLinkError(e.message||'Não foi possível baixar o documento assinado.');}
+  finally{setLinkBusy(false);}
+ };
  const items=order?.itens||[];
  const missingPrintCode=items.some(i=>printCode(i)==null);
  return <section className="space-y-5">
@@ -322,6 +337,11 @@ export default function VendorWorkflow(){
        {evidence.signed&&<><p><strong>Assinante:</strong> {field(evidence.signerName)}</p><p><strong>Data:</strong> {date(evidence.acceptedAt)}</p>
        <p><strong>Integridade da assinatura:</strong> {evidence.signatureIntegrity?'Verificada':'Não verificada — bloqueado'}</p>
        <p className="break-all"><strong>SHA-256:</strong> {field(evidence.signatureSha256)}</p></>}
+       {evidence.signed&&evidence.signatureIntegrity&&<div className="flex flex-wrap gap-2 pt-2">
+        <button type="button" disabled={linkBusy} onClick={generateSignedPdf} className="border rounded px-3 py-2 disabled:opacity-50">Gerar PDF assinado</button>
+        {signedPdf&&<button type="button" disabled={linkBusy} onClick={downloadSignedPdf} className="border rounded px-3 py-2 disabled:opacity-50">Baixar PDF assinado</button>}
+       </div>}
+       {signedPdf&&<p className="text-xs break-all">SHA-256 do PDF: {signedPdf.sha256}</p>}
        <p className="text-amber-900">Encaminhamento automático à produção desabilitado. Aguarda conferência e homologação final.</p>
      </div>}
     </div>
