@@ -86,7 +86,7 @@ function Term(){
  const [expanded,setExpanded]=useState([]);
  return <section className="bg-white border rounded-lg p-4 sm:p-6 mt-5 space-y-4" aria-label="Termo jurídico revisado">
   <h3 className="text-lg font-bold">{LEGAL_TITLE}</h3>
-  <p className="text-sm rounded border border-amber-300 bg-amber-50 p-3 text-amber-900">Minuta v1.0 em homologação única. A assinatura e o envio definitivo permanecem bloqueados.</p>
+  <p className="text-sm rounded border border-amber-300 bg-amber-50 p-3 text-amber-900">Versão jurídica revisada: o envio ao cliente exige homologação registrada e conferência do pedido SIC.</p>
   <button type="button" className="border rounded px-3 py-2 text-sm print:hidden" onClick={()=>setExpanded(v=>v.length===LEGAL_SECTIONS.length?[]:LEGAL_SECTIONS.map((_,i)=>i))}>{expanded.length===LEGAL_SECTIONS.length?'Recolher todos':'Expandir todos'}</button>
   {LEGAL_SECTIONS.map(([title,paragraphs],i)=><div key={i} className="border rounded-lg break-inside-avoid print:break-inside-avoid">
    <button type="button" className="w-full text-left font-semibold p-3" aria-expanded={expanded.includes(i)} onClick={()=>setExpanded(v=>v.includes(i)?v.filter(x=>x!==i):[...v,i])}>{i+1}. {title} <span className="print:hidden">{expanded.includes(i)?'−':'+'}</span></button>
@@ -94,7 +94,7 @@ function Term(){
   </div>)}
   <h4 className="font-semibold">Declaração de conferência e aceite</h4>
   {LEGAL_CONSENT.map((p,i)=><p key={i} className="text-sm">{p}</p>)}
-  <div className="border-2 border-dashed rounded-lg p-5 text-center text-sm text-slate-600"><LockKeyhole className="h-6 w-6 mx-auto mb-2"/> Assinatura indisponível até a homologação e integração do espelho completo.</div>
+  <div className="border-2 border-dashed rounded-lg p-5 text-center text-sm text-slate-600"><LockKeyhole className="h-6 w-6 mx-auto mb-2"/> O cliente assina exclusivamente pelo link individual após a conferência do espelho SIC.</div>
  </section>;
 }
 export default function VendorWorkflow(){
