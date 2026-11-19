@@ -1,0 +1,26 @@
+name: Aceite - verificacao de homologacao
+on:
+  push:
+    branches:
+      - 'work/aceite-integridade-espelho-20261119'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Testes de integridade e aceite
+        run: |
+          node --test scripts/test-acceptance-consent.cjs
+          node --test scripts/test-public-order-security.cjs
+          node --test scripts/test-document-integrity-audit.cjs
+      - name: Compilacao do frontend
+        run: npm run build
