@@ -95,7 +95,7 @@ exports.handler=async event=>{
    supabaseFetch('/rest/v1/aceite_acceptances?order_id=eq.'+id+
     '&level=eq.1&select=id,signer_name,signature_storage_path,signature_sha256,legal_text_sha256,accepted_at,checklist&limit=1'),
    supabaseFetch('/rest/v1/aceite_generated_documents?order_id=eq.'+id+
-    '&document_type=eq.signed_acceptance&select=id,acceptance_id,storage_path,file_sha256,version&limit=1')
+    '&document_type=eq.level1_acceptance&select=id,acceptance_id,storage_path,file_sha256,version&limit=1')
   ]);
   const order=orders?.[0],a=acceptances?.[0],existing=docs?.[0];
   if(!order||order.origin!=='SIC_SUPRASYS'||!a)throw invalid('Aceite assinado nao encontrado',404);
@@ -135,7 +135,7 @@ exports.handler=async event=>{
   await storage(path,'POST',pdf);
   const rows=await supabaseFetch('/rest/v1/aceite_generated_documents?select=id',{
    method:'POST',headers:{Prefer:'return=representation'},body:{
-    order_id:id,acceptance_id:a.id,document_type:'signed_acceptance',
+    order_id:id,acceptance_id:a.id,document_type:'level1_acceptance',
     version:1,storage_path:path,file_sha256:sha(pdf)
    }});
   if(!rows?.[0]?.id)throw invalid('Registro do documento nao confirmado',503);
