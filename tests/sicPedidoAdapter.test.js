@@ -88,3 +88,16 @@ test('valores negativos são recusados', () => {
   const r = base(); r.pedido.valores.total = -100;
   assert.equal(adaptarPedidoSic(r).aptoParaPreparacao, false);
 });
+
+test('não inventa endereço de entrega quando a API só informa endereço cadastral', () => {
+  const r = base();
+  const p = adaptarPedidoSic(r);
+  assert.equal(p.enderecoEntrega, '');
+  assert.match(p.enderecoCadastral, /Rua Teste/);
+});
+
+test('preserva endereço de entrega específico quando fornecido pela API', () => {
+  const r = base(); r.pedido.enderecoEntregaTexto = 'Rua da Obra, 123';
+  const p = adaptarPedidoSic(r);
+  assert.equal(p.enderecoEntrega, 'Rua da Obra, 123');
+});
