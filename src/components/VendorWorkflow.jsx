@@ -110,6 +110,8 @@ export default function VendorWorkflow(){
  const [evidence,setEvidence]=useState(null);
  const [signedPdf,setSignedPdf]=useState(null);
  const [handoff,setHandoff]=useState(null);
+ const [legalApproval,setLegalApproval]=useState(null);
+ const [legalBusy,setLegalBusy]=useState(false);
  const [pdfBusy,setPdfBusy]=useState(false);
  const [pdfError,setPdfError]=useState('');
  const [working,setWorking]=useState(false);
@@ -279,6 +281,16 @@ export default function VendorWorkflow(){
   catch(e){setLinkError(e.message||'Não foi possível registrar o encaminhamento.');}
   finally{setLinkBusy(false);}
  };
+ const homologateLegal=async()=>{
+  if(!window.confirm('Confirma a homologação jurídica da versão 1.0-minuta das 13 cláusulas revisadas? Esta aprovação será vinculada à sua conta autenticada.'))return;
+  setLegalBusy(true);setLinkError('');
+  try{setLegalApproval(await apiPost('/.netlify/functions/approve-legal-version',{
+    confirmed:true,version:'1.0-minuta',
+    justification:'Homologação expressamente autorizada da versão jurídica revisada das treze cláusulas para o sistema DRAFER ACEITE.'
+  }));}
+  catch(e){setLinkError(e.message||'Não foi possível registrar a homologação.');}
+  finally{setLegalBusy(false);}
+ };
  const items=order?.itens||[];
  const missingPrintCode=items.some(i=>printCode(i)==null);
  return <section className="space-y-5">
@@ -332,6 +344,12 @@ export default function VendorWorkflow(){
     </div>
     <div className="border-t pt-3 space-y-2">
      <h4 className="font-semibold">Gerar e compartilhar aceite</h4>
+     <div className="border rounded p-3 space-y-2 text-sm">
+      <p className="font-semibold">Homologação jurídica da versão revisada</p>
+      <p>A autorização da redação já foi concedida. Um administrador ou aprovador deve registrar a homologação usando sua sessão autenticada.</p>
+      <button type="button" disabled={legalBusy||Boolean(legalApproval?.approved)} onClick={homologateLegal} className="border rounded px-3 py-2 disabled:opacity-50">{legalBusy?'Registrando...':'Registrar homologação da versão revisada'}</button>
+      {legalApproval?.approved&&<p role="status" className="text-green-800 break-all">Homologada: {legalApproval.version} — SHA-256: {legalApproval.sha256}</p>}
+     </div>
      <p className="text-sm text-amber-900">O servidor só emitirá o link após validar o espelho integral, a elegibilidade e a versão jurídica homologada. Nenhuma aprovação individual por pedido é exigida.</p>
      <div className="flex flex-wrap gap-2">
       <button type="button" disabled={linkBusy||!status?.orderId||status?.state==='assinado'} onClick={issueLink} className="bg-slate-900 text-white disabled:bg-slate-300 disabled:text-slate-600 rounded px-4 py-2 inline-flex gap-2 items-center"><FileText className="w-4 h-4"/>Gerar link do cliente</button>
