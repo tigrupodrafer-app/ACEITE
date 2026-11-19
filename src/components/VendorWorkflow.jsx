@@ -29,7 +29,7 @@ function ItemTable({items}){
     </div>
    </article>)}
   </div>
-  <div className="hidden sm:block print:block overflow-x-auto"><table className="w-full min-w-[890px] text-[13px] border-collapse">
+  <div className="hidden sm:block print:block overflow-x-auto"><table className="w-full min-w-[890px] print:min-w-0 print:text-[9px] text-[13px] border-collapse">
   <thead><tr className="border-b border-black">{['Cód. impressão','Cód. interno','Descrição','Unid.','Qtde. KG','Qtde. PC','Vr. Unit.','Valor Total'].map(h=><th key={h} className="py-2 px-1 font-normal text-left">{h}</th>)}</tr></thead>
   <tbody>{items.map((item,i)=><tr key={i} className="align-top">
     <td className="p-1">{field(printCode(item))}</td>
@@ -70,7 +70,7 @@ function PrintedOrder({order,items}){
    <LabelValue label="Local de Entrega" value={order.localEntrega||order.enderecoEntrega}/>
    <LabelValue label="Obs" value={order.observacoes||order.obs}/>
   </div>
-  <div className="p-2 pt-5 sm:pt-20 min-h-[220px] sm:min-h-[360px] print:pt-20"><ItemTable items={items}/></div>
+  <div className="p-2 pt-5 sm:pt-20 min-h-[220px] sm:min-h-[360px] print:pt-4 print:min-h-0"><ItemTable items={items}/></div>
   <div className="border-t-2 border-black px-2 py-2 grid grid-cols-2 md:grid-cols-6 gap-1 text-[12px] sm:text-sm">
    <span><b>Tot. Qtde:</b> {summary.quantityGroups.length?summary.quantityGroups.map(g=>num(g.quantity,2)+' '+g.unit).join(' + '):'—'}</span>
    <span><b>Tot. Qtde KG:</b> {summary.weightKg===null?'—':num(summary.weightKg)+' KG'}</span>
@@ -88,7 +88,7 @@ function Term(){
   <h3 className="text-lg font-bold">{LEGAL_TITLE}</h3>
   <p className="text-sm rounded border border-amber-300 bg-amber-50 p-3 text-amber-900">Minuta v1.0 em homologação única. A assinatura e o envio definitivo permanecem bloqueados.</p>
   <button type="button" className="border rounded px-3 py-2 text-sm print:hidden" onClick={()=>setExpanded(v=>v.length===LEGAL_SECTIONS.length?[]:LEGAL_SECTIONS.map((_,i)=>i))}>{expanded.length===LEGAL_SECTIONS.length?'Recolher todos':'Expandir todos'}</button>
-  {LEGAL_SECTIONS.map(([title,paragraphs],i)=><div key={i} className="border rounded-lg break-inside-avoid">
+  {LEGAL_SECTIONS.map(([title,paragraphs],i)=><div key={i} className="border rounded-lg break-inside-avoid print:break-inside-avoid">
    <button type="button" className="w-full text-left font-semibold p-3" aria-expanded={expanded.includes(i)} onClick={()=>setExpanded(v=>v.includes(i)?v.filter(x=>x!==i):[...v,i])}>{i+1}. {title} <span className="print:hidden">{expanded.includes(i)?'−':'+'}</span></button>
    <div className={(expanded.includes(i)?'block':'hidden')+' print:block border-t p-3 space-y-2 text-sm'}>{paragraphs.map((p,j)=><p key={j}>{p}</p>)}</div>
   </div>)}
@@ -212,6 +212,18 @@ export default function VendorWorkflow(){
  const items=order?.itens||[];
  const missingPrintCode=items.some(i=>printCode(i)==null);
  return <section className="space-y-5">
+  <style>{`@media print {
+    @page { size: A4; margin: 12mm; }
+    body * { visibility: hidden !important; }
+    #drafer-print-document, #drafer-print-document * { visibility: visible !important; }
+    #drafer-print-document { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+    #drafer-print-document article { break-after: page; }
+    #drafer-print-document section { margin-top: 0 !important; }
+    #drafer-print-document table { width: 100% !important; min-width: 0 !important; }
+    #drafer-print-document tr { break-inside: avoid; }
+    #drafer-print-document button { color: #111 !important; }
+    #drafer-print-document .print\\:hidden { display: none !important; }
+  }`}</style>
   <OrderLoadingModal open={Boolean(loadingPhase)} phase={loadingPhase} orderNumber={number}
    elapsed={elapsed} error={loadingError} onClose={closeError}/>
   <div className="bg-white p-5 border rounded-lg space-y-3 print:hidden">
