@@ -238,6 +238,7 @@ export default function VendorWorkflow(){
    {error&&<p role="alert" className="bg-red-50 border border-red-200 text-red-900 p-3 rounded">{error}</p>}
   </div>
   {order&&<>
+   <div id="drafer-print-document">
    <PrintedOrder order={order.pedidoCompleto} items={items}/>
    {!totalsForPrint(items).weightComplete&&<p role="status" className="print:hidden bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-900">Há itens sem unidade de peso homologada. O total em KG não inclui produtos contabilizados apenas em unidades; confira o relatório SIC antes da emissão.</p>}
    <div className="print:hidden bg-white border rounded p-4 space-y-3">
@@ -263,6 +264,7 @@ export default function VendorWorkflow(){
     </div>
    </div>
    <Term/>
+   </div>
   </>}
  </section>;
 }
