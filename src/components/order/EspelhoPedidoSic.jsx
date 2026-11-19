@@ -32,9 +32,7 @@ export default function EspelhoPedidoSic({ pedido }) {
         <p><strong>Tipo de venda:</strong> {fmt(pedido.tipoVenda)}</p>
         <p><strong>Previsão de entrega:</strong> {fmt(pedido.dataEntregaPrevista)}</p>
         <p className="sm:col-span-2"><strong>Endereço cadastral:</strong> {fmt(pedido.enderecoCadastral)}</p>
-        <p className="sm:col-span-2"><strong>Local de entrega:</strong> {pedido.enderecoEntregaConfirmado
-          ? 'Confirmado no SIC; detalhamento sujeito à homologação'
-          : 'Não confirmado no SIC'}</p>
+        <p className="sm:col-span-2"><strong>Local de entrega:</strong> {pedido.enderecoEntrega || 'Não disponibilizado pela API SIC'}</p>
       </section>
       <div className="overflow-x-auto py-3">
         <table className="w-full min-w-[580px] text-left">
