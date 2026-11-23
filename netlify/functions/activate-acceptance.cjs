@@ -50,12 +50,14 @@ exports.handler=async event=>{
   // Defesa adicional na borda. A RPC deve repetir a verificacao sob lock.
   const reviews=await supabaseFetch('/rest/v1/aceite_audit_events?order_id=eq.'+
    o.id+'&action=eq.sic_delivery_address_reviewed&select=actor_id,metadata&limit=100');
+  const snapshotSha256=createHash('sha256').update(JSON.stringify(s)).digest('hex');
   const revision=String(o.details?.snapshotRevision??1);
   const sourceRequestId=String(s?.sourceRequestId??'');
   const delivery=String(p.localEntrega||p.enderecoEntrega||'').trim();
   const reviewed=Array.isArray(reviews)&&reviews.some(e=>
    e.actor_id===authUser.id&&e.metadata?.manualReview===true&&
    String(e.metadata?.sourceRequestId)===sourceRequestId&&
+   e.metadata?.snapshotSha256===snapshotSha256&&
    String(e.metadata?.snapshotRevision)===revision&&
    String(e.metadata?.deliveryAddress)===delivery&&
    String(e.metadata?.companyId)===String(o.sic_company_id)&&
