@@ -17,11 +17,16 @@ try {
 foreach($n in @(352488,352688)) {
  try {
   $r=Invoke-RestMethod -Uri ('http://127.0.0.1:3101/api/pedidos/'+$n) -TimeoutSec 25
-  $s=if($r.result){$r.result}else{$r}
-  $enderecos=@($s.enderecosEntrega|Where-Object { $_ -ne $null })
-  $cad=$null -ne $s.enderecoCadastralEntrega
-  $itens=@($s.itens|Where-Object { $_ -ne $null }).Count
-  Write-Host ('PEDIDO '+$n+' | ENDERECOS '+$enderecos.Count+' | CADASTRAL '+$cad+' | ITENS '+$itens)
+  $s=$r
+  if($r.PSObject.Properties['result'] -and $null -ne $r.result){$s=$r.result}
+  $enderecos=@()
+  if($s.PSObject.Properties['enderecosEntrega']){$enderecos=@($s.enderecosEntrega|Where-Object { $null -ne $_ })}
+  $cad=$false
+  if($s.PSObject.Properties['enderecoCadastralEntrega']){$cad=$null -ne $s.enderecoCadastralEntrega}
+  $itens=0
+  if($s.PSObject.Properties['itens']){$itens=@($s.itens|Where-Object { $null -ne $_ }).Count}
+  $keys=@($s.PSObject.Properties.Name) -join ','
+  Write-Host ('PEDIDO '+$n+' | ENDERECOS '+$enderecos.Count+' | CADASTRAL '+$cad+' | ITENS '+$itens+' | CAMPOS '+$keys)
  } catch { Write-Host ('PEDIDO '+$n+' FALHOU: '+$_.Exception.Message) }
 }
 Write-Host '=== FIM: NENHUMA ALTERACAO EFETUADA ==='
