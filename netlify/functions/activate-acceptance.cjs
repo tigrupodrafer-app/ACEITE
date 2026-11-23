@@ -49,6 +49,20 @@ exports.handler=async event=>{
     items.some(i=>!i||typeof i.descricao!=='string'||!i.descricao.trim()||
       !Number.isFinite(numeric(i.valorTotal))||numeric(i.valorTotal)<0))
    throw invalid('Espelho SIC incompleto ou pedido nao elegivel para aceite');
+  // Defesa adicional na borda. A RPC deve repetir a verificacao sob lock.
+  const reviews=await supabaseFetch('/rest/v1/aceite_audit_events?order_id=eq.'+
+   o.id+'&action=eq.sic_delivery_address_reviewed&select=actor_id,metadata&order=id.desc&limit=20');
+  const revision=String(o.details?.snapshotRevision??1);
+  const sourceRequestId=String(s?.sourceRequestId??'');
+  const delivery=String(p.localEntrega||p.enderecoEntrega||'').trim();
+  const reviewed=Array.isArray(reviews)&&reviews.some(e=>
+   e.actor_id===authUser.id&&e.metadata?.manualReview===true&&
+   String(e.metadata?.sourceRequestId)===sourceRequestId&&
+   String(e.metadata?.snapshotRevision)===revision&&
+   String(e.metadata?.deliveryAddress)===delivery&&
+   String(e.metadata?.companyId)===String(o.sic_company_id)&&
+   String(e.metadata?.orderNumber)===String(o.sic_order_number));
+  if(!reviewed)throw invalid('Conferencia auditavel da entrega nao encontrada para esta revisao');
   const approved=await supabaseFetch('/rest/v1/aceite_legal_versions?version=eq.'+
    encodeURIComponent(legal.version)+'&content_sha256=eq.'+hash+
    '&status=eq.homologado&select=id&limit=1');
