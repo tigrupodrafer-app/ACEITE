@@ -53,6 +53,21 @@ while ($true) {
               pedidoCompleto = $data.pedido
               itens = @($data.pedido.itens)
               validacao = $data.validacao
+              # Compatibilidade: API local antiga pode nao disponibilizar
+              # as opcoes; nesse caso a confirmacao permanece bloqueada.
+              enderecosEntrega = @(
+                if ($null -ne $data.PSObject.Properties['enderecosEntrega']) {
+                  $data.enderecosEntrega
+                } elseif ($null -ne $data.pedido.PSObject.Properties['enderecosEntrega']) {
+                  $data.pedido.enderecosEntrega
+                }
+              )
+              enderecoCadastralEntrega = $null
+            }
+            if ($null -ne $data.PSObject.Properties['enderecoCadastralEntrega']) {
+              $normalized.enderecoCadastralEntrega = $data.enderecoCadastralEntrega
+            } elseif ($null -ne $data.pedido.PSObject.Properties['enderecoCadastralEntrega']) {
+              $normalized.enderecoCadastralEntrega = $data.pedido.enderecoCadastralEntrega
             }
             $localOk = $true
             Write-Host ("SIC local HTTP read OK for order " + $number)
