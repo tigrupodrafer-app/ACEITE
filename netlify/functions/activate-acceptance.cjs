@@ -64,9 +64,8 @@ exports.handler=async event=>{
    ['ARQCADEND','ARQCAD'].includes(e.metadata?.deliverySelection?.origem)&&
    typeof e.metadata?.selectedAddress==='string'&&
    e.metadata.selectedAddress.length>0&&
-   // Nao permitir ativacao se a entrega escolhida nao for a mesma
-   // representada no espelho juridico do pedido.
-   String(e.metadata.selectedAddress)===delivery&&
+   // A RPC valida a selecao contra o snapshot SIC sob lock e grava o endereco
+   // escolhido no espelho juridico antes de liberar o pedido.
    String(e.metadata?.companyId)===String(o.sic_company_id)&&
    String(e.metadata?.orderNumber)===String(o.sic_order_number));
   if(!reviewed)throw invalid('Conferencia auditavel da entrega nao encontrada para esta revisao');
