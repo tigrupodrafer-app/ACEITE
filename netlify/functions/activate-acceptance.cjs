@@ -49,7 +49,8 @@ exports.handler=async event=>{
    throw invalid('Espelho SIC incompleto ou pedido nao elegivel para aceite');
   // Defesa adicional na borda. A RPC deve repetir a verificacao sob lock.
   const reviews=await supabaseFetch('/rest/v1/aceite_audit_events?order_id=eq.'+
-   o.id+'&action=eq.sic_delivery_address_reviewed&select=actor_id,metadata&limit=100');
+   o.id+'&action=eq.sic_delivery_address_reviewed&actor_id=eq.'+authUser.id+
+   '&select=actor_id,metadata&order=created_at.desc&limit=100');
   const snapshotSha256=createHash('sha256').update(JSON.stringify(s)).digest('hex');
   const revision=String(o.details?.snapshotRevision??1);
   const sourceRequestId=String(s?.sourceRequestId??'');
