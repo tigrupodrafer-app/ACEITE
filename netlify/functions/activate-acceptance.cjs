@@ -7,6 +7,18 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const hash=createHash('sha256').update(JSON.stringify(legal)).digest('hex');
 const invalid=(message,statusCode=409)=>Object.assign(new Error(message),{statusCode});
 const numeric=v=>v===null||v===undefined||v===''?NaN:Number(v);
+const cents=v=>Math.round(v*100);
+function financialsMatch(p,validation){
+ const subtotal=numeric(p?.valores?.subtotal);
+ const discount=numeric(p?.valores?.desconto??0);
+ const freight=numeric(p?.frete??0);
+ const total=numeric(p?.valores?.total);
+ const sum=numeric(validation?.somaItens);
+ return [subtotal,discount,freight,total,sum].every(Number.isFinite)&&
+  subtotal>=0&&discount>=0&&freight>=0&&discount<=subtotal&&total>0&&
+  Math.abs(cents(subtotal)-cents(sum))<=2&&
+  Math.abs(cents(total)-(cents(subtotal)-cents(discount)+cents(freight)))<=2;
+}
 exports.handler=async event=>{
  try{
   onlyMethod(event,'POST');
@@ -27,7 +39,7 @@ exports.handler=async event=>{
     String(p.liberado||'').trim().toUpperCase()!=='S'||
     s.validacao?.valido!==true||numeric(p.valores?.total)<=0||
     !Number.isFinite(numeric(s.validacao?.somaItens))||
-    Math.abs(numeric(p.valores.total)-numeric(s.validacao.somaItens))>0.02||
+    !financialsMatch(p,s.validacao)||
     typeof p.cliente?.nome!=='string'||p.cliente.nome.trim().length<2||
     !String(p.nomeEmpresa||p.razaoSocialEmpresa||'').trim()||
     !String(p.tipoVenda||p.tipoVendaDescricao||p.tipoVendaCodigo||'').trim()||
