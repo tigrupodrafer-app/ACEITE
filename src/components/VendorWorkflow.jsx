@@ -375,9 +375,9 @@ export default function VendorWorkflow(){
         opcoes={order?.enderecosEntrega||order?.pedidoCompleto?.enderecosEntrega||[]}
         cadastral={order?.enderecoCadastralEntrega||order?.pedidoCompleto?.enderecoCadastralEntrega||null}
         onSelectionChange={setDeliverySelection} />
-      {deliverySelection&&<p role="status" className="border border-amber-300 rounded p-2 font-medium">Endereço selecionado para o termo jurídico: {field((deliverySelection.origem==='ARQCADEND'
+      {deliverySelection&&<p role="status" className="border border-amber-300 rounded p-2 font-medium">Endereço selecionado para o termo jurídico: {field((()=>{const x=deliverySelection.origem==='ARQCADEND'
         ? (order?.enderecosEntrega||[]).find(item=>item.origem==='ARQCADEND'&&Number(item.sequencia)===deliverySelection.sequencia)
-        : order?.enderecoCadastralEntrega)?.endereco)}. A validação definitiva ocorrerá no servidor.</p>}
+        : order?.enderecoCadastralEntrega;return [x?.endereco,x?.numero,x?.bairro,x?.cidade,x?.uf,x?.cep].filter(Boolean).join(', ');})())}. A validação definitiva ocorrerá no servidor.</p>}
       <p>Se o local de entrega não estiver confirmado, a ativação permanecerá bloqueada até a homologação do registro auditável.</p>
      </div>
      <button type="button" disabled={linkBusy||!deliverySelection||!(status?.orderId||draft?.draftId)||status?.state==='assinado'} onClick={activateAcceptance} className="border rounded px-4 py-2 disabled:opacity-50">Conferi o pedido SIC — solicitar habilitação</button>
