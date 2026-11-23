@@ -61,6 +61,12 @@ exports.handler=async event=>{
    e.metadata?.snapshotSha256===snapshotSha256&&
    String(e.metadata?.snapshotRevision)===revision&&
    String(e.metadata?.deliveryAddress)===delivery&&
+   ['ARQCADEND','ARQCAD'].includes(e.metadata?.deliverySelection?.origem)&&
+   typeof e.metadata?.selectedAddress==='string'&&
+   e.metadata.selectedAddress.length>0&&
+   // Nao permitir ativacao se a entrega escolhida nao for a mesma
+   // representada no espelho juridico do pedido.
+   String(e.metadata.selectedAddress)===delivery&&
    String(e.metadata?.companyId)===String(o.sic_company_id)&&
    String(e.metadata?.orderNumber)===String(o.sic_order_number));
   if(!reviewed)throw invalid('Conferencia auditavel da entrega nao encontrada para esta revisao');
