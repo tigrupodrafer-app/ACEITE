@@ -90,7 +90,9 @@ exports.handler = async (event) => {
       order_number: String(orderNumber), client_name: clientName,
       sale_date: null, // Avoid timezone conversion of Firebird dates until canonicalized.
       status: 'rascunho', warranty_blocked: true, created_by: authUser.id,
-      order_snapshot: { pedidoCompleto: pedido, itens, validacao, sourceRequestId: query.id },
+      order_snapshot: { pedidoCompleto: pedido, itens, validacao, sourceRequestId: query.id,
+        enderecosEntrega: query.result.enderecosEntrega || [],
+        enderecoCadastralEntrega: query.result.enderecoCadastralEntrega || null },
       details: {
         material: itens.length === 1 ? String(itens[0].descricao) : itens.length + ' itens do SIC',
         quantity: itens.length === 1 && Number.isFinite(num(itens[0].quantidade))
