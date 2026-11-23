@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * Escolha explícita do endereço de entrega. Esta interface NÃO confirma
@@ -21,6 +21,8 @@ export default function SeletorEnderecoEntrega({
 }) {
   const [selected, setSelected] = useState('');
   const [reviewed, setReviewed] = useState(false);
+  const notifySelection = useRef(onSelectionChange);
+  useEffect(() => { notifySelection.current = onSelectionChange; }, [onSelectionChange]);
 
   const validOptions = useMemo(() => (
     Array.isArray(opcoes)
@@ -48,15 +50,21 @@ export default function SeletorEnderecoEntrega({
 
   const chosen = options.find(item => item.key === selected);
   const selection = reviewed && chosen && !disabled ? chosen.value : null;
+  const selectionOrigin = selection?.origem ?? null;
+  const selectionSequence = selection?.sequencia ?? null;
 
   useEffect(() => {
     setSelected('');
     setReviewed(false);
   }, [pedidoNumero]);
 
+  // Avoid a render loop when the parent passes an inline callback.
+  // A changed/removed SIC option invalidates the selection automatically.
   useEffect(() => {
-    onSelectionChange?.(selection);
-  }, [selection?.origem, selection?.sequencia, onSelectionChange]);
+    notifySelection.current?.(selectionOrigin
+      ? { origem: selectionOrigin, sequencia: selectionSequence }
+      : null);
+  }, [selectionOrigin, selectionSequence]);
 
   const formatAddress = item => [
     [item.endereco, item.numero].filter(Boolean).join(', '),
