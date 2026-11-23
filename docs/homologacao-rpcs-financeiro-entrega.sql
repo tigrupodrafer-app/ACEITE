@@ -1,0 +1,29 @@
+-- DRAFER ACEITE - plano de homologacao das RPCs existentes.
+-- NAO EXECUTAR DIRETAMENTE: documento de especificacao, nao migracao.
+-- Funcoes observadas no Supabase:
+-- public.aceite_atualizar_rascunho_sic(p_order_id uuid,p_request_id uuid,p_actor_id uuid)
+-- public.aceite_ativar_pedido_atomico(p_order_id uuid,p_actor_id uuid,p_legal_version text,p_legal_sha256 text)
+--
+-- Defeito: ambas verificam abs(total - somaItens) > 0.02, ignorando descontos.
+-- Validacao financeira proposta em centavos:
+--   abs(subtotal - somaItens) <= 0.02
+--   abs(total - (subtotal - desconto + frete)) <= 0.02
+--   subtotal >= 0; desconto >= 0; desconto <= subtotal; frete >= 0; total > 0
+--   Todos os campos devem ser numericos validos antes de converter para numeric.
+--   Conferir semantica de frete no SIC antes de implantar.
+--
+-- Confirmacao do endereco:
+--   A origem ARQCAD/ARQCADEND e informativa e NAO confirma entrega.
+--   Exigir registro de confirmacao autenticada e auditavel, associado ao pedido,
+--   revisao do snapshot SIC, endereco completo e usuario vendedor.
+--   Nunca usar apenas input.confirmed=true ou um campo do snapshot controlavel
+--   pelo cliente como prova suficiente.
+--   Revalidar o registro de confirmacao dentro da RPC atomica antes de ativar.
+--
+-- Testes de aceite antes da publicacao:
+--   352488: subtotal 225.98 - desconto 0.08 = 225.90, sem frete.
+--   352688: testar total, desconto e frete reais do SIC.
+--   Bloquear divergencias > 0.02, endereco sem confirmacao e revisao alterada.
+--   Verificar permissao EXECUTE da RPC e auditoria de SECURITY DEFINER.
+--
+-- Estado: analise concluida; nenhuma funcao foi modificada.
