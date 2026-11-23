@@ -1,0 +1,30 @@
+name: DRAFER ACEITE - Main CI
+on:
+  push:
+    branches:
+      - feat/migracao-supabase-netlify-20261113
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax of all Netlify Functions
+        run: find netlify/functions -type f -name '*.cjs' -print0 | xargs -0 -n1 node --check
+      - name: Current acceptance tests
+        run: |
+          node --test scripts/test-acceptance-consent.cjs
+          node --test scripts/test-public-order-security.cjs
+          node --test scripts/test-document-integrity-audit.cjs
+          node --test scripts/test-final-workflow-mocks.cjs
+      - run: npm run build

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, AlertCircle } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 
-export default function OrdersTable({ orders, isLoading }) {
+export default function OrdersTable({ orders, isLoading, readOnly = false }) {
   const statusLabels = {
     'rascunho': 'Rascunho',
     'aguardando_aceite_pedido': 'Aguardando Aceite',
@@ -53,8 +53,8 @@ export default function OrdersTable({ orders, isLoading }) {
             <TableRow key={order.id} className="hover:bg-slate-50">
               <TableCell className="font-mono text-sm font-bold">{order.order_number}</TableCell>
               <TableCell className="text-sm">{order.client_name}</TableCell>
-              <TableCell className="text-sm">{order.material}</TableCell>
-              <TableCell className="text-sm">{order.quantity}</TableCell>
+              <TableCell className="text-sm">{order.material || '—'}</TableCell>
+              <TableCell className="text-sm">{order.quantity ?? '—'}</TableCell>
               <TableCell>
                 <Badge className={`${statusColors[order.status]} text-slate-900 text-xs`}>
                   {statusLabels[order.status]}
@@ -69,11 +69,15 @@ export default function OrdersTable({ orders, isLoading }) {
                 </div>
               </TableCell>
               <TableCell>
-                <Button asChild size="sm" variant="outline" className="gap-1">
-                  <a href={`${createPageUrl('OrderDetail')}?id=${order.id}`}>
-                    <Eye className="w-4 h-4" /> Ver
-                  </a>
-                </Button>
+                {readOnly ? (
+                  <span className="text-xs text-slate-500">Detalhes em migração</span>
+                ) : (
+                  <Button asChild size="sm" variant="outline" className="gap-1">
+                    <a href={`${createPageUrl('OrderDetail')}?id=${order.id}`}>
+                      <Eye className="w-4 h-4" /> Ver
+                    </a>
+                  </Button>
+                )}
               </TableCell>
             </TableRow>
           ))}
