@@ -371,10 +371,13 @@ export default function VendorWorkflow(){
       <p className="font-semibold">Conferência do endereço de entrega</p>
       <p>Endereço cadastral SIC (referência, não comprovação de entrega): {field([order?.pedidoCompleto?.cliente?.endereco,order?.pedidoCompleto?.cliente?.numeroEndereco,order?.pedidoCompleto?.cliente?.bairro,order?.pedidoCompleto?.cliente?.cidade,order?.pedidoCompleto?.cliente?.uf||order?.pedidoCompleto?.cliente?.estado].filter(Boolean).join(', '))}</p>
       <p>Local de entrega informado pelo SIC: {field(order?.pedidoCompleto?.localEntrega||order?.pedidoCompleto?.enderecoEntrega)}</p>
-      <SeletorEnderecoEntrega pedidoNumero={order?.pedidoCompleto?.numero}
+      <SeletorEnderecoEntrega pedidoNumero={request?.requestId||order?.pedidoCompleto?.numero}
         opcoes={order?.enderecosEntrega||order?.pedidoCompleto?.enderecosEntrega||[]}
         cadastral={order?.enderecoCadastralEntrega||order?.pedidoCompleto?.enderecoCadastralEntrega||null}
         onSelectionChange={setDeliverySelection} />
+      {deliverySelection&&<p role="status" className="border border-amber-300 rounded p-2 font-medium">Endereço selecionado para o termo jurídico: {field((deliverySelection.origem==='ARQCADEND'
+        ? (order?.enderecosEntrega||[]).find(item=>item.origem==='ARQCADEND'&&Number(item.sequencia)===deliverySelection.sequencia)
+        : order?.enderecoCadastralEntrega)?.endereco)}. A validação definitiva ocorrerá no servidor.</p>}
       <p>Se o local de entrega não estiver confirmado, a ativação permanecerá bloqueada até a homologação do registro auditável.</p>
      </div>
      <button type="button" disabled={linkBusy||!deliverySelection||!(status?.orderId||draft?.draftId)||status?.state==='assinado'} onClick={activateAcceptance} className="border rounded px-4 py-2 disabled:opacity-50">Conferi o pedido SIC — solicitar habilitação</button>
