@@ -52,7 +52,7 @@ export default function SeletorEnderecoEntrega({
   useEffect(() => {
     setSelected('');
     setReviewed(false);
-  }, [pedidoNumero, opcoes, cadastral]);
+  }, [pedidoNumero]);
 
   useEffect(() => {
     onSelectionChange?.(selection);
