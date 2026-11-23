@@ -30,8 +30,10 @@ exports.handler=async event=>{
   const rows=await supabaseFetch('/rest/v1/aceite_orders?id=eq.'+input.orderId+
    '&select=id,status,origin,sic_company_id,sic_order_number,order_snapshot,details&limit=1');
   const o=rows?.[0],s=o?.order_snapshot,p=s?.pedidoCompleto,items=s?.itens;
-  if(p?.enderecoEntregaConfirmado===false && !String(p.localEntrega||p.enderecoEntrega||'').trim())
-   throw invalid('O SIC nao confirmou endereco de entrega. Confirme na origem antes de emitir o aceite');
+  // Ausencia de confirmacao explicita nunca e compensada por texto de endereco.
+  // A confirmacao autenticada e auditavel sera validada na RPC antes da liberacao.
+  if(p?.enderecoEntregaConfirmado!==true)
+   throw invalid('Endereco de entrega ainda nao confirmado no SIC. Ativacao bloqueada.');
   if(!o||o.origin!=='SIC_SUPRASYS'||o.status!=='rascunho'||o.details?.draftOnly!==true||
     !p||!Array.isArray(items)||!items.length||items.length>200||
     String(p.numero)!==String(o.sic_order_number)||
