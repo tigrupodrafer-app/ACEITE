@@ -111,6 +111,7 @@ export default function VendorWorkflow(){
  const [signedPdf,setSignedPdf]=useState(null);
  const [handoff,setHandoff]=useState(null);
  const [legalApproval,setLegalApproval]=useState(null);
+ const [deliveryReviewed,setDeliveryReviewed]=useState(false);
  const [legalBusy,setLegalBusy]=useState(false);
  const [pdfBusy,setPdfBusy]=useState(false);
  const [pdfError,setPdfError]=useState('');
@@ -161,7 +162,7 @@ export default function VendorWorkflow(){
   const query=number.trim();
   if(!/^[1-9]\d{0,11}$/.test(query)){setError('Informe um número de pedido válido.');return;}
   const seq=++querySequence.current;
-  setOrder(null);setStatus(null);setRequest(null);setDraft(null);setReview(null);setCustomerLink('');setEvidence(null);setSignedPdf(null);setHandoff(null);setLinkError('');setPdfError('');setError('');setLoadingError('');
+  setDeliveryReviewed(false);setOrder(null);setStatus(null);setRequest(null);setDraft(null);setReview(null);setCustomerLink('');setEvidence(null);setSignedPdf(null);setHandoff(null);setLinkError('');setPdfError('');setError('');setLoadingError('');
   setElapsed(0);startedAt.current=Date.now();
   setLoadingPhase('enviando');setWorking(true);
   try{
@@ -295,6 +296,7 @@ export default function VendorWorkflow(){
  const activateAcceptance=async()=>{
   const id=status?.orderId||draft?.draftId;
   if(!id){setLinkError('Gere primeiro o aceite a partir do pedido SIC.');return;}
+  if(!deliveryReviewed){setLinkError('Confira e confirme o endereco de entrega antes de solicitar a ativacao.');return;}
   if(!window.confirm('Você conferiu o espelho integral do pedido SIC e confirma que está correto para envio ao cliente?'))return;
   setLinkBusy(true);setLinkError('');
   try{
@@ -362,7 +364,14 @@ export default function VendorWorkflow(){
       <button type="button" disabled={legalBusy||Boolean(legalApproval?.approved)} onClick={homologateLegal} className="border rounded px-3 py-2 disabled:opacity-50">{legalBusy?'Registrando...':'Registrar homologação da versão revisada'}</button>
       {legalApproval?.approved&&<p role="status" className="text-green-800 break-all">Homologada: {legalApproval.version} — SHA-256: {legalApproval.sha256}</p>}
      </div>
-     <button type="button" disabled={linkBusy||!(status?.orderId||draft?.draftId)||status?.state==='assinado'} onClick={activateAcceptance} className="border rounded px-4 py-2 disabled:opacity-50">Conferi o pedido SIC — habilitar aceite</button>
+     <div className="border rounded p-3 space-y-2 bg-amber-50 text-sm text-amber-950">
+      <p className="font-semibold">Conferência do endereço de entrega</p>
+      <p>Endereço cadastral SIC (referência, não comprovação de entrega): {field([order?.pedidoCompleto?.cliente?.endereco,order?.pedidoCompleto?.cliente?.numeroEndereco,order?.pedidoCompleto?.cliente?.bairro,order?.pedidoCompleto?.cliente?.cidade,order?.pedidoCompleto?.cliente?.uf||order?.pedidoCompleto?.cliente?.estado].filter(Boolean).join(', '))}</p>
+      <p>Local de entrega informado pelo SIC: {field(order?.pedidoCompleto?.localEntrega||order?.pedidoCompleto?.enderecoEntrega)}</p>
+      <label className="flex items-start gap-2"><input type="checkbox" className="mt-1" checked={deliveryReviewed} onChange={e=>setDeliveryReviewed(e.target.checked)}/><span>Conferi o local de entrega com os dados do pedido. Estou ciente de que esta marcação não substitui a validação registrada pelo servidor.</span></label>
+      <p>Se o local de entrega não estiver confirmado, a ativação permanecerá bloqueada até a homologação do registro auditável.</p>
+     </div>
+     <button type="button" disabled={linkBusy||!deliveryReviewed||!(status?.orderId||draft?.draftId)||status?.state==='assinado'} onClick={activateAcceptance} className="border rounded px-4 py-2 disabled:opacity-50">Conferi o pedido SIC — solicitar habilitação</button>
      <p className="text-sm text-amber-900">O servidor só emitirá o link após validar o espelho integral, a elegibilidade e a versão jurídica homologada. Nenhuma aprovação individual por pedido é exigida.</p>
      <div className="flex flex-wrap gap-2">
       <button type="button" disabled={linkBusy||!status?.orderId||status?.state==='assinado'} onClick={issueLink} className="bg-slate-900 text-white disabled:bg-slate-300 disabled:text-slate-600 rounded px-4 py-2 inline-flex gap-2 items-center"><FileText className="w-4 h-4"/>Gerar link do cliente</button>
