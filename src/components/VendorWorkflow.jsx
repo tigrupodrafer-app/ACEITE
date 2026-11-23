@@ -297,9 +297,11 @@ export default function VendorWorkflow(){
   const id=status?.orderId||draft?.draftId;
   if(!id){setLinkError('Gere primeiro o aceite a partir do pedido SIC.');return;}
   if(!deliveryReviewed){setLinkError('Confira e confirme o endereco de entrega antes de solicitar a ativacao.');return;}
-  if(!window.confirm('Você conferiu o espelho integral do pedido SIC e confirma que está correto para envio ao cliente?'))return;
+  if(!window.confirm('Confirma o local de entrega exibido no SIC e a conferência integral do pedido? A confirmação será registrada para auditoria.'))return;
   setLinkBusy(true);setLinkError('');
   try{
+   const delivery=await apiPost('/.netlify/functions/confirm-delivery-address',{orderId:id,confirmed:true});
+   if(delivery?.recorded!==true)throw Error('A conferência de entrega não foi registrada.');
    await apiPost('/.netlify/functions/activate-acceptance',{orderId:id,confirmed:true});
    await refreshStatus(number);
   }catch(e){setLinkError(e.message||'Não foi possível habilitar o aceite.');}
