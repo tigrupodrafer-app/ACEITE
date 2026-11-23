@@ -87,6 +87,8 @@ exports.handler = async (event) => {
           pedidoCompleto: data.pedidoCompleto,
           itens: data.itens.slice(0, 200),
           validacao: data.validacao,
+          enderecosEntrega: Array.isArray(data.enderecosEntrega) ? data.enderecosEntrega.slice(0, 100) : [],
+          enderecoCadastralEntrega: data.enderecoCadastralEntrega || null,
           policy: { acceptanceEnabled: false, reason: 'Homologação: situação e validação financeira pendentes' },
         }, error_message: null, finished_at: new Date().toISOString() }
       : { status: 'failed', result: null,
