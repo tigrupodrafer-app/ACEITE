@@ -32,8 +32,6 @@ exports.handler=async event=>{
   const o=rows?.[0],s=o?.order_snapshot,p=s?.pedidoCompleto,items=s?.itens;
   // Ausencia de confirmacao explicita nunca e compensada por texto de endereco.
   // A confirmacao autenticada e auditavel sera validada na RPC antes da liberacao.
-  if(p?.enderecoEntregaConfirmado!==true)
-   throw invalid('Endereco de entrega ainda nao confirmado no SIC. Ativacao bloqueada.');
   if(!o||o.origin!=='SIC_SUPRASYS'||o.status!=='rascunho'||o.details?.draftOnly!==true||
     !p||!Array.isArray(items)||!items.length||items.length>200||
     String(p.numero)!==String(o.sic_order_number)||
@@ -51,7 +49,7 @@ exports.handler=async event=>{
    throw invalid('Espelho SIC incompleto ou pedido nao elegivel para aceite');
   // Defesa adicional na borda. A RPC deve repetir a verificacao sob lock.
   const reviews=await supabaseFetch('/rest/v1/aceite_audit_events?order_id=eq.'+
-   o.id+'&action=eq.sic_delivery_address_reviewed&select=actor_id,metadata&order=id.desc&limit=20');
+   o.id+'&action=eq.sic_delivery_address_reviewed&select=actor_id,metadata&limit=100');
   const revision=String(o.details?.snapshotRevision??1);
   const sourceRequestId=String(s?.sourceRequestId??'');
   const delivery=String(p.localEntrega||p.enderecoEntrega||'').trim();
