@@ -44,7 +44,10 @@ exports.handler = async (event) => {
         const lease = crypto.randomBytes(32).toString('hex');
         const filter = BASE + '?id=eq.' + item.id +
           '&status=eq.' + item.status +
-          '&claim_count=eq.' + item.claim_count + '&select=id,order_number';
+          '&claim_count=eq.' + item.claim_count +
+          '&expires_at=gt.' + encodeURIComponent(new Date().toISOString()) +
+          (item.status === 'processing' ? '&claimed_at=lt.' + encodeURIComponent(stale) : '') +
+          '&select=id,order_number';
         const claimed = await supabaseFetch(filter, {
           method: 'PATCH',
           headers: { Prefer: 'return=representation' },
@@ -97,7 +100,9 @@ exports.handler = async (event) => {
           finished_at: new Date().toISOString() };
     const updated = await supabaseFetch(BASE + '?id=eq.' + input.requestId +
       '&lease_hash=eq.' + leaseHash +
-      '&status=eq.processing&select=id', {
+      '&status=eq.processing' +
+      '&expires_at=gt.' + encodeURIComponent(new Date().toISOString()) +
+      '&select=id', {
       method: 'PATCH', headers: { Prefer: 'return=representation' }, body,
     });
     if (!updated?.length) throw err('Atualização concorrente', 409);
