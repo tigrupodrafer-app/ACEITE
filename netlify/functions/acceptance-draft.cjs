@@ -46,13 +46,24 @@ exports.handler = async (event) => {
     const clientName = typeof pedido?.cliente?.nome === 'string' ? pedido.cliente.nome.trim() : '';
     const total = num(pedido?.valores?.total);
     const calculated = num(validacao?.somaItens);
+    const subtotal = num(pedido?.valores?.subtotal);
+    const discount = num(pedido?.valores?.desconto);
+    const freight = num(pedido?.frete ?? 0);
+    // Compare like-for-like amounts: item sum -> subtotal -> net total.
+    // Monetary checks use integer cents to avoid binary floating point rounding.
+    const cents = value => Math.round(value * 100);
+    const financialsValid = [total, calculated, subtotal, discount, freight].every(Number.isFinite) &&
+      subtotal >= 0 && discount >= 0 && freight >= 0 &&
+      discount <= subtotal &&
+      Math.abs(cents(calculated) - cents(subtotal)) <= 2 &&
+      Math.abs(cents(total) - (cents(subtotal) - cents(discount) + cents(freight))) <= 2;
     if (!pedido || !Array.isArray(itens) || !itens.length || itens.length > 200 ||
         !Number.isSafeInteger(orderNumber) || !Number.isSafeInteger(company) || company <= 0 ||
         num(pedido.numero) !== orderNumber ||
         String(pedido.liberado || '').trim().toUpperCase() !== 'S' ||
         clientName.length < 2 || clientName.length > 220 ||
         validacao?.valido !== true || !Number.isFinite(total) || total <= 0 ||
-        !Number.isFinite(calculated) || Math.abs(total - calculated) > 0.02 ||
+        !financialsValid ||
         itens.some(i => !i || typeof i.descricao !== 'string' || !Number.isFinite(num(i.valorTotal)))) {
       throw invalid('Dados do SIC insuficientes para registrar um rascunho. Revise o pedido.', 422);
     }
