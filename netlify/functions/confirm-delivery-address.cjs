@@ -48,7 +48,7 @@ exports.handler=async event=>{
     trusted.uf,trusted.cep].map(v=>String(v??'').trim()).filter(Boolean).join(', ');
   if(!normalized||normalized.length>1000)throw invalid('Endereco de entrega incompleto',409);
   const address=String(p.localEntrega||p.enderecoEntrega||'').trim();
-  if(!address||address.length>1000)throw invalid('Local de entrega ausente no espelho SIC',409);
+  if(address.length>1000)throw invalid('Local de entrega ausente no espelho SIC',409);
   const sourceRequestId=o.order_snapshot?.sourceRequestId;
   if(!UUID.test(sourceRequestId||''))throw invalid('Consulta SIC sem origem verificavel',409);
   const snapshotHash=createHash('sha256').update(canonical(o.order_snapshot)).digest('hex');
