@@ -339,9 +339,10 @@ export default function VendorWorkflow(){
      <label className="flex flex-col text-sm gap-1">WhatsApp do cliente (DDD + número)<input type="tel" autoComplete="off" className="border rounded px-3 py-2" placeholder="(18) 99999-9999" value={phone} maxLength={24} onChange={e=>setPhone(e.target.value)}/></label>
      <button disabled={!whatsappNumber(phone)} className="border rounded px-3 py-2 disabled:opacity-50 self-end" onClick={()=>window.open('https://wa.me/'+whatsappNumber(phone)+'?text='+encodeURIComponent('Confira e assine seu pedido DRAFER: '+customerLink),'_blank','noopener,noreferrer')}>WhatsApp</button>
     </div>}
-    <button disabled={linkBusy||!status?.orderId} onClick={verifyEvidence} className="border rounded px-4 py-2 disabled:opacity-50">Verificar assinatura</button>
+    <button disabled={linkBusy||!status?.orderId} onClick={verifyEvidence} className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-700 px-5 py-3 font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed mr-2 mb-2"><ShieldCheck size={19} aria-hidden="true"/>Verificar assinatura</button>
     {evidence&&<p>{evidence.signed?(evidence.signatureIntegrity?'Assinatura verificada: '+field(evidence.signerName):'Integridade não confirmada'):'Aguardando assinatura'}</p>}
-    <button disabled={linkBusy||!evidence?.signed||!evidence?.signatureIntegrity} onClick={printSigned} className="border rounded px-4 py-2 disabled:opacity-50">Imprimir aceite assinado (PDF)</button>
+    <button disabled={linkBusy||!evidence?.signed||!evidence?.signatureIntegrity} onClick={printSigned} className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm hover:bg-emerald-800 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:bg-slate-200 disabled:text-slate-600 disabled:shadow-none disabled:cursor-not-allowed mb-2"><Printer size={19} aria-hidden="true"/>Imprimir aceite assinado (PDF)</button>
+    {(!evidence?.signed||!evidence?.signatureIntegrity)&&<p className="mt-1 text-sm text-slate-600">Verifique a assinatura para liberar a impressão do PDF.</p>}
     {linkError&&<p role="alert" className="text-red-700">{linkError}</p>}
    </div>
   </div>}
