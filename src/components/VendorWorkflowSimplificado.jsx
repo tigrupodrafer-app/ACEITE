@@ -155,6 +155,8 @@ export default function VendorWorkflow(){
   try{
    const data=await apiGet('/.netlify/functions/vendor-acceptance-status?number='+encodeURIComponent(n));
    setStatus(data);
+   if(data.relativeUrl)setCustomerLink(new URL(data.relativeUrl,window.location.origin).toString());
+   else if(data.state!=='link_ativo')setCustomerLink('');
   }catch(e){
    // The SIC order remains usable even if the acceptance history endpoint is unavailable.
    setStatus({state:'indisponivel'});
@@ -274,6 +276,7 @@ export default function VendorWorkflow(){
    const n=String(order.pedidoCompleto.numero);
    const current=await apiGet('/.netlify/functions/vendor-acceptance-status?number='+encodeURIComponent(n));
    setStatus(current);
+   if(current.relativeUrl)setCustomerLink(new URL(current.relativeUrl,window.location.origin).toString());
    if(current.state!=='link_ativo')setCustomerLink('');
    if(current.orderId)setEvidence(await apiGet('/.netlify/functions/seller-acceptance-evidence?orderId='+encodeURIComponent(current.orderId)));
   }catch(e){setLinkError(e.message);}
