@@ -330,6 +330,8 @@ export default function VendorWorkflow(){
     {status?.state==='link_ativo'&&!customerLink&&<p className="text-sm">Já existe um link ativo. Utilize o link enviado anteriormente. Um novo link poderá ser emitido após o vencimento.</p>}
     <p><strong>Status:</strong> {simpleStatus[status?.state]||status?.state||'Consultando...'}</p>
     {customerLink&&status?.state==='link_ativo'&&Date.parse(status.latestLink?.expiresAt)>Date.now()&&<div className="flex flex-wrap gap-2">
+     <label className="w-full flex flex-col gap-1 text-sm font-medium">Link do cliente<input className="w-full border rounded px-3 py-2 font-mono text-xs" readOnly value={customerLink} onFocus={e=>e.target.select()}/></label>
+     <p className="w-full text-sm text-slate-600">Válido até {new Date(status.latestLink.expiresAt).toLocaleString("pt-BR",{timeZone:"America/Sao_Paulo"})}</p>
      <button className="border rounded px-3 py-2" onClick={()=>navigator.clipboard.writeText(customerLink).catch(()=>setLinkError('Não foi possível copiar o link.'))}>Copiar link</button>
      <label className="flex flex-col text-sm gap-1">WhatsApp do cliente (DDD + número)<input type="tel" autoComplete="off" className="border rounded px-3 py-2" placeholder="(18) 99999-9999" value={phone} maxLength={24} onChange={e=>setPhone(e.target.value)}/></label>
      <button disabled={!whatsappNumber(phone)} className="border rounded px-3 py-2 disabled:opacity-50 self-end" onClick={()=>window.open('https://wa.me/'+whatsappNumber(phone)+'?text='+encodeURIComponent('Confira e assine seu pedido DRAFER: '+customerLink),'_blank','noopener,noreferrer')}>WhatsApp</button>
