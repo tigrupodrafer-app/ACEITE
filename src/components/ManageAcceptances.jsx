@@ -1,0 +1,23 @@
+import React,{useState,useEffect} from 'react';
+import {apiGet,apiPost,apiDownloadPdf} from '@/lib/apiClient';
+const endpoint='/.netlify/functions/manage-acceptances';
+const pdf='/.netlify/functions/signed-acceptance-document';
+export default function ManageAcceptances({onBack}){
+ const [rows,setRows]=useState([]),[page,setPage]=useState(0),[more,setMore]=useState(false),[filter,setFilter]=useState('all'),[search,setSearch]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[target,setTarget]=useState(null),[reason,setReason]=useState('');
+ async function load(p=page){setBusy(true);setError('');try{const r=await apiGet(endpoint+'?page='+p);setRows(r.rows);setMore(r.more);setPage(p)}catch(e){setError(e.message)}finally{setBusy(false)}}
+ useEffect(()=>{load(0)},[]);
+ async function download(o){setBusy(true);setError('');try{await apiPost(pdf,{orderId:o.id});await apiDownloadPdf(pdf+'?orderId='+o.id,'aceite-'+o.number+'-'+o.id.slice(0,8)+'.pdf')}catch(e){setError(e.message)}finally{setBusy(false)}}
+ async function cancel(){setBusy(true);setError('');try{await apiPost(endpoint,{orderId:target.id,reason});setTarget(null);setReason('');await load()}catch(e){setError(e.message)}finally{setBusy(false)}}
+ const visible=rows.filter(o=>(filter==='all'||(filter==='cancelled'?o.cancelled:!o.cancelled&&(filter==='signed'?o.signed:!o.signed)))&&[o.number,o.client,o.company].some(x=>String(x??'').toLowerCase().includes(search.toLowerCase())));
+ return <section className="bg-white rounded-xl border p-4 space-y-4">
+ <div className="flex flex-wrap justify-between gap-3"><h2 className="text-xl font-bold">Gerenciar termos</h2><button onClick={onBack} className="border rounded px-4 py-2">Voltar à consulta SIC</button></div>
+ <p className="text-sm text-slate-600">Consulte os documentos emitidos. Cancelamentos preservam o histórico e liberam uma nova consulta do mesmo pedido.</p>
+ <div className="flex flex-wrap gap-2"><input aria-label="Pesquisar nesta página" placeholder="Pesquisar nesta página" value={search} onChange={e=>setSearch(e.target.value)} className="border rounded p-2 flex-1"/><select aria-label="Filtrar termos" value={filter} onChange={e=>setFilter(e.target.value)} className="border rounded p-2"><option value="all">Todos</option><option value="signed">Assinados</option><option value="pending">Pendentes</option><option value="cancelled">Cancelados</option></select><button disabled={busy} onClick={()=>load()} className="border rounded px-3">Atualizar</button></div>
+ {error&&<p role="alert" className="text-red-700">{error}</p>}
+ {busy&&<p role="status">Processando...</p>}
+ {!visible.length&&!busy&&<p>Nenhum termo nesta página.</p>}
+ {visible.map(o=><article key={o.id} className="border rounded-lg p-3 flex flex-wrap gap-3 items-center justify-between"><div><strong>Pedido {o.number} — Empresa {o.company}</strong><p>{o.client}</p><p className="text-sm text-slate-600">{new Date(o.createdAt).toLocaleString('pt-BR')} · {o.cancelled?'Cancelado':o.signed?'Assinado':o.status==='rascunho'?'Rascunho':'Pendente'}{o.cancelled&&o.signed?' (assinado anteriormente)':''}</p></div><div className="flex flex-wrap gap-2">{o.signed&&<button disabled={busy} onClick={()=>download(o)} className="bg-emerald-700 text-white rounded px-4 py-2">PDF assinado</button>}{o.canCancel&&<button disabled={busy} onClick={()=>{setTarget(o);setReason('')}} className="bg-red-700 text-white rounded px-4 py-2">Cancelar</button>}{o.cancelled&&<button onClick={()=>onBack(o.number)} className="bg-blue-700 text-white rounded px-4 py-2">Recriar</button>}</div></article>)}
+ <div className="flex gap-3 items-center"><button disabled={busy||page===0} onClick={()=>load(page-1)} className="border rounded px-3 py-2 disabled:opacity-40">Anterior</button><span>Página {page+1}</span><button disabled={busy||!more} onClick={()=>load(page+1)} className="border rounded px-3 py-2 disabled:opacity-40">Próxima</button></div>
+ {target&&<div className="border-2 border-red-300 rounded p-4 space-y-3"><strong>Cancelar pedido {target.number}?</strong><p>O link anterior será invalidado. Documentos e evidências serão preservados.</p><textarea aria-label="Motivo do cancelamento" value={reason} onChange={e=>setReason(e.target.value)} maxLength={500} className="w-full border rounded p-2" placeholder="Motivo obrigatório"/><div className="flex gap-2"><button disabled={busy||reason.trim().length<5} onClick={cancel} className="bg-red-700 text-white rounded px-4 py-2 disabled:opacity-40">Confirmar cancelamento</button><button disabled={busy} onClick={()=>setTarget(null)} className="border rounded px-4 py-2">Voltar</button></div></div>}
+ </section>
+}
