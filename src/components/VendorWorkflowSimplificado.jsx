@@ -242,6 +242,16 @@ export default function VendorWorkflow(){
   }catch(e){setLinkError(e.message);}
   finally{await refreshStatus(String(order.pedidoCompleto.numero));setLinkBusy(false);}
  };
+ const resumeLink=async()=>{
+  if(linkBusy||status?.state!=='pendente'||status?.orderStatus!=='aguardando_aceite_pedido'||!status?.orderId)return;
+  setLinkBusy(true);setLinkError('');
+  try{
+   const result=await apiPost('/.netlify/functions/issue-acceptance-link',{orderId:status.orderId});
+   if(!result.relativeUrl)throw Error('Link não retornado.');
+   setCustomerLink(new URL(result.relativeUrl,window.location.origin).toString());
+  }catch(e){setLinkError(e.message);}
+  finally{await refreshStatus(String(order.pedidoCompleto.numero));setLinkBusy(false);}
+ };
  const verifyEvidence=async()=>{
   setLinkBusy(true);setLinkError('');setEvidence(null);
   try{
@@ -287,7 +297,7 @@ export default function VendorWorkflow(){
    {error&&<p role="alert" className="bg-red-50 border border-red-200 text-red-900 p-3 rounded">{error}</p>}
   </div>
   {order&&<div className="space-y-4">
-   <details className="border rounded-lg bg-white p-4" open>
+   <details className="border rounded-lg bg-white p-4">
     <summary className="font-semibold cursor-pointer">Pedido {order.pedidoCompleto.numero} — R$ {brl(order.pedidoCompleto.valores?.total)}</summary>
     <div className="mt-3"><PrintedOrder order={order.pedidoCompleto} items={items}/></div>
    </details>
@@ -296,9 +306,11 @@ export default function VendorWorkflow(){
      <SeletorEnderecoEntrega pedidoNumero={request?.requestId}
        opcoes={order.enderecosEntrega||order.pedidoCompleto.enderecosEntrega||[]}
        cadastral={order.enderecoCadastralEntrega||order.pedidoCompleto.enderecoCadastralEntrega||null}
-       onSelectionChange={setDeliverySelection}/>
+       disabled={linkBusy} onSelectionChange={setDeliverySelection}/>
      <button disabled={linkBusy||!deliverySelection||!status} onClick={createAcceptance} className="bg-slate-900 text-white rounded px-4 py-3 disabled:opacity-50">{linkBusy?'Processando...':'Gerar link do cliente'}</button>
     </>}
+    {status?.state==='pendente'&&status?.orderStatus==='aguardando_aceite_pedido'&&<button disabled={linkBusy} onClick={resumeLink} className="bg-slate-900 text-white rounded px-4 py-3 disabled:opacity-50">Gerar novo link do cliente</button>}
+    {status?.state==='link_ativo'&&!customerLink&&<p className="text-sm">Já existe um link ativo. Utilize o link enviado anteriormente. Um novo link poderá ser emitido após o vencimento.</p>}
     <p><strong>Status:</strong> {simpleStatus[status?.state]||status?.state||'Consultando...'}</p>
     {customerLink&&<div className="flex flex-wrap gap-2">
      <button className="border rounded px-3 py-2" onClick={()=>navigator.clipboard.writeText(customerLink).catch(()=>setLinkError('Não foi possível copiar o link.'))}>Copiar link</button>
