@@ -31,7 +31,7 @@ function buildPdf(order,a,signature){
  const pdf=new jsPDF({unit:'mm',format:'a4',compress:true});
  const width=pdf.internal.pageSize.getWidth(),height=pdf.internal.pageSize.getHeight();
  let y=20;const margin=16;
- const clean=v=>String(v??'Nao informado').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+ const clean=v=>String(v??'Não informado').normalize('NFC')
   .replace(/[\x00-\x1f]/g,' ').slice(0,800);
  const add=(value,bold=false)=>{
   pdf.setFont('helvetica',bold?'bold':'normal');pdf.setFontSize(bold?11:9);
@@ -40,45 +40,45 @@ function buildPdf(order,a,signature){
    pdf.text(line,margin,y);y+=bold?6:5;
   }y+=2;
  };
- add('DRAFER - COMPROVANTE DE ACEITE ELETRONICO',true);
+ add('DRAFER - COMPROVANTE DE ACEITE ELETRÔNICO',true);
  add('Pedido SIC: '+order.order_number+' | Empresa: '+(p.nomeEmpresa||p.razaoSocialEmpresa||order.sic_company_id),true);
  add('Cliente: '+order.client_name);
  add('Documento do cliente: '+(p.cliente?.cnpj||p.cliente?.cpf||p.cliente?.cnpjCpf));
- add('Emissao: '+p.dataPedido+' | Entrega prevista: '+p.dataEntrega);
+ add('Emissão: '+p.dataPedido+' | Entrega prevista: '+p.dataEntrega);
  add('Vendedor: '+(p.vendedor||p.codigoVendedor));
- add('Condicao de pagamento: '+(p.condicaoPagamento||p.condicoesPagamento||p.codigoCondicaoPagamentoCadastral));
+ add('Condição de pagamento: '+(p.condicaoPagamento||p.condicoesPagamento||p.codigoCondicaoPagamentoCadastral));
  add('Local de entrega: '+(p.localEntrega||p.enderecoEntrega));
  add('Itens do pedido',true);
  for(const [i,item] of items.entries()){
   add((i+1)+'. '+item.descricao);
-  add('Codigo: '+(item.codigoProdutoImpressao??item.codigoImpressao??item.codigoProdutoComercial)+
+  add('Código: '+(item.codigoProdutoImpressao??item.codigoImpressao??item.codigoProdutoComercial)+
    ' | Unidade: '+item.unidade+' | Quantidade: '+item.quantidade+
-   ' | Pecas: '+item.quantidadePecas+' | Peso KG: '+(item.pesoLiquidoKg??item.pesoBrutoKg)+
-   ' | Unitario: '+item.valorUnitario+' | Total: '+item.valorTotal);
+   ' | Peças: '+item.quantidadePecas+' | Peso KG: '+(item.pesoLiquidoKg??item.pesoBrutoKg)+
+   ' | Unitário: '+item.valorUnitario+' | Total: '+item.valorTotal);
  }
  add('Subtotal: '+p.valores?.subtotal+' | Desconto: '+p.valores?.desconto+
   ' | Frete: '+(p.valores?.frete??p.frete)+' | Total: '+p.valores?.total,true);
- add('Observacoes: '+(p.observacoes||p.obs));
- add(legal.title+' - versao '+legal.version,true);
+ add('Observações: '+(p.observacoes||p.obs));
+ add(legal.title+' - versão '+legal.version,true);
  for(const [i,section] of legal.sections.entries()){
   add((i+1)+'. '+section[0],true);
   for(const paragraph of section[1])add(paragraph);
  }
- add('DECLARACOES CONFIRMADAS PELO CLIENTE',true);
+ add('DECLARAÇÕES CONFIRMADAS PELO CLIENTE',true);
  for(const [i,text] of legal.consent.entries())add((i+1)+'. [X] '+text);
  if(y>height-95){pdf.addPage();y=20;}
  add('Assinante: '+a.signer_name,true);
  add('Data e hora do aceite (UTC): '+a.accepted_at);
  add('Protocolo: '+a.id);
- add('SHA-256 do termo juridico: '+a.legal_text_sha256.trim());
+ add('SHA-256 do termo jurídico: '+a.legal_text_sha256.trim());
  add('SHA-256 da assinatura: '+a.signature_sha256.trim());
  const base64=signature.toString('base64');
  pdf.addImage('data:image/png;base64,'+base64,'PNG',margin,y,85,27);
  y+=33;
- add('Assinatura eletronicamente capturada. Integridade verificavel pelo protocolo e hashes.');
+ add('Assinatura eletronicamente capturada. Integridade verificável pelo protocolo e hashes.');
  const count=pdf.getNumberOfPages();
  for(let i=1;i<=count;i++){pdf.setPage(i);pdf.setFontSize(8);
-  pdf.text('ACEITE DRAFER | '+order.order_number+' | Pagina '+i+'/'+count,margin,height-9);}
+  pdf.text('ACEITE DRAFER | '+order.order_number+' | Página '+i+'/'+count,margin,height-9);}
  return Buffer.from(pdf.output('arraybuffer'));
 }
 exports.handler=async event=>{
