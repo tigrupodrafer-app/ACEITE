@@ -110,7 +110,8 @@ export function createServer() {
     }
   });
 }
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const port = Number(process.env.PORT || 3000);
-  createServer().listen(port, '0.0.0.0', () => console.log('[aceite] Node server listening on configured port'));
-}
+const port = Number(process.env.PORT || 3000);
+
+createServer().listen(port, '0.0.0.0', () => {
+  console.log('[aceite] Node server listening on configured port');
+});
