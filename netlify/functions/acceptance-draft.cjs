@@ -16,7 +16,7 @@ function num(value) {
 }
 async function findExisting(company, number) {
   const rows = await supabaseFetch(ORDERS +
-    '?origin=eq.SIC_SUPRASYS&sic_company_id=eq.' + company +
+    '?status=neq.cancelado&origin=eq.SIC_SUPRASYS&sic_company_id=eq.' + company +
     '&sic_order_number=eq.' + number + '&select=id,order_number,status&limit=1');
   return rows?.[0] || null;
 }
