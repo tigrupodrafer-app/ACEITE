@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {useAuth} from '@/lib/AuthContext';
 import {apiPost} from '@/lib/apiClient';
 import VendorWorkflow from '@/components/VendorWorkflowSimplificado';
+import ManageAcceptances from '@/components/ManageAcceptances';
 import legal from '@/lib/legalTermRevised.json';
 
 function LegalAdministration(){
@@ -30,10 +31,14 @@ function LegalAdministration(){
 }
 export default function Dashboard(){
  const {user}=useAuth();
+ const [manage,setManage]=useState(false);
+ const [revision,setRevision]=useState(0);
+ const [recreate,setRecreate]=useState('');
  return <main className="min-h-screen bg-slate-50 p-4 sm:p-6">
   <div className="max-w-5xl mx-auto">
    <header className="mb-6"><h1 className="text-3xl font-bold text-slate-900">ACEITE DRAFER</h1><p className="text-slate-600">Consulte, confirme e envie o pedido para assinatura.</p></header>
-   <VendorWorkflow/>
+   {!manage&&<button onClick={()=>setManage(true)} className="mb-4 bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded-lg px-5 py-3">Gerenciar termos</button>}
+   {manage?<ManageAcceptances onBack={number=>{setRecreate(typeof number==='string'?number:'');setRevision(v=>v+1);setManage(false)}}/>:<VendorWorkflow key={revision} initialNumber={recreate} resetOnMount={revision>0}/>}
    {['admin','aprovador'].includes(user?.role)&&<LegalAdministration/>}
   </div>
  </main>;
