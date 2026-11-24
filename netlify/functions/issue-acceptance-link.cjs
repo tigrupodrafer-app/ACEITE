@@ -10,7 +10,7 @@ const invalid=(message,statusCode=409)=>Object.assign(new Error(message),{status
 exports.handler=async(event)=>{
  try {
   onlyMethod(event,'POST');
-  const {authUser}=await requireStaff(event,{allowedRoles:['admin','vendedor']});
+  const {authUser}=await requireStaff(event,{allowedRoles:['admin','vendedor','aprovador']});
   if(typeof event.body!=='string'||event.body.length>512) throw invalid('Requisicao invalida',400);
   let body;try{body=JSON.parse(event.body)}catch{throw invalid('JSON invalido',400)}
   if(!UUID.test(body.orderId||''))throw invalid('Pedido invalido',400);
