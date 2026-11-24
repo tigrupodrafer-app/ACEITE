@@ -9,7 +9,7 @@ exports.handler=async event=>{
   const {authUser,member}=await requireStaff(event,{allowedRoles:['admin','vendedor','aprovador']});
   const number=String(event.queryStringParameters?.number||'');
   if(!/^[1-9]\d{0,11}$/.test(number))throw invalid('Número do pedido inválido');
-  const rows=await supabaseFetch('/rest/v1/aceite_orders?origin=eq.SIC_SUPRASYS&sic_order_number=eq.'+
+  const rows=await supabaseFetch('/rest/v1/aceite_orders?status=neq.cancelado&origin=eq.SIC_SUPRASYS&sic_order_number=eq.'+
     number+'&select=id,order_number,sic_company_id,status,details,created_at&limit=10');
   const orders=rows||[];
   if(orders.length>1)return respond(409,{error:'Pedido encontrado em mais de uma empresa. Consulte a empresa no SIC.'});
