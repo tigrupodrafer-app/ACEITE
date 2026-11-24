@@ -17,10 +17,11 @@ export default function SeletorEnderecoEntrega({
   opcoes = [],
   cadastral = null,
   disabled = false,
+  initialSelection = null,
   onSelectionChange,
 }) {
-  const [selected, setSelected] = useState('');
-  const [reviewed, setReviewed] = useState(false);
+  const [selected, setSelected] = useState(()=>initialSelection?.origem==='ARQCADEND'?'ARQCADEND:'+initialSelection.sequencia:initialSelection?.origem==='ARQCAD'?'ARQCAD':'');
+  const [reviewed, setReviewed] = useState(()=>Boolean(initialSelection));
   const notifySelection = useRef(onSelectionChange);
   useEffect(() => { notifySelection.current = onSelectionChange; }, [onSelectionChange]);
 
@@ -53,7 +54,10 @@ export default function SeletorEnderecoEntrega({
   const selectionOrigin = selection?.origem ?? null;
   const selectionSequence = selection?.sequencia ?? null;
 
+  const previousPedido=useRef(pedidoNumero);
   useEffect(() => {
+    if(previousPedido.current===pedidoNumero)return;
+    previousPedido.current=pedidoNumero;
     setSelected('');
     setReviewed(false);
   }, [pedidoNumero]);
