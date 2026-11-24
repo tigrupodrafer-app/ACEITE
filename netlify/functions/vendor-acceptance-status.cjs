@@ -24,7 +24,7 @@ exports.handler=async event=>{
     current&&!current.revoked_at&&!current.used_at&&Date.parse(current.expires_at)>Date.now()?
       'link_ativo':order.status==='rascunho'?'rascunho':'pendente';
   let relativeUrl=null;
-  if(state==='link_ativo'&&current.level===1&&order.status==='aguardando_aceite_pedido'&&current.recovery_ciphertext&&(member.role==='admin'||(member.role==='vendedor'&&current.recovery_owner===authUser.id))){
+  if(state==='link_ativo'&&current.level===1&&order.status==='aguardando_aceite_pedido'&&current.recovery_ciphertext&&(member.role==='admin'||(['vendedor','aprovador'].includes(member.role)&&current.recovery_owner===authUser.id))){
    try{
     const key=Buffer.from(process.env.ACCEPTANCE_LINK_ENCRYPTION_KEY||'','base64');
     const [iv,tag,data]=current.recovery_ciphertext.split('.').map(x=>Buffer.from(x,'base64'));
