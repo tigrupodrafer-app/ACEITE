@@ -1,4 +1,4 @@
-import React,{useEffect,useState,useRef} from 'react';
+import React,{useEffect,useState,useRef,useContext,createContext} from 'react';
 import OrderLoadingModal from '@/components/OrderLoadingModal';
 import SeletorEnderecoEntrega from '@/components/order/SeletorEnderecoEntrega';
 import { LEGAL_SECTIONS, LEGAL_CONSENT, LEGAL_TITLE } from '@/lib/legalTermRevised';
@@ -98,21 +98,37 @@ function Term(){
   <div className="border-2 border-dashed rounded-lg p-5 text-center text-sm text-slate-600"><LockKeyhole className="h-6 w-6 mx-auto mb-2"/> O cliente assina exclusivamente pelo link individual após a conferência do espelho SIC.</div>
  </section>;
 }
+const WorkspaceContext=createContext(null);
+export function AcceptanceWorkspaceProvider({children}){
+ const [workspace,setWorkspace]=useState({});
+ return <WorkspaceContext.Provider value={{workspace,setWorkspace}}>{children}</WorkspaceContext.Provider>;
+}
+function useWorkspaceState(key,initial){
+ const {workspace,setWorkspace}=useContext(WorkspaceContext);
+ return [Object.prototype.hasOwnProperty.call(workspace,key)?workspace[key]:initial,
+  next=>setWorkspace(prev=>({...prev,[key]:typeof next==='function'?next(Object.prototype.hasOwnProperty.call(prev,key)?prev[key]:initial):next}))];
+}
+const whatsappNumber=value=>{
+ const digits=value.replace(/\D/g,'');
+ return /^[1-9][0-9][2-9][0-9]{7,8}$/.test(digits)?'55'+digits:
+ /^55[1-9][0-9][2-9][0-9]{7,8}$/.test(digits)?digits:'';
+};
 export default function VendorWorkflow(){
- const [number,setNumber]=useState('');
- const [request,setRequest]=useState(null);
- const [order,setOrder]=useState(null);
- const [status,setStatus]=useState(null);
+ const [number,setNumber]=useWorkspaceState('number','');
+ const [request,setRequest]=useWorkspaceState('request',null);
+ const [order,setOrder]=useWorkspaceState('order',null);
+ const [status,setStatus]=useWorkspaceState('status',null);
  const [draft,setDraft]=useState(null);
  const [review,setReview]=useState(null);
- const [customerLink,setCustomerLink]=useState('');
+ const [customerLink,setCustomerLink]=useWorkspaceState('customerLink','');
+ const [phone,setPhone]=useWorkspaceState('phone','');
  const [linkBusy,setLinkBusy]=useState(false);
  const [linkError,setLinkError]=useState('');
- const [evidence,setEvidence]=useState(null);
+ const [evidence,setEvidence]=useWorkspaceState('evidence',null);
  const [signedPdf,setSignedPdf]=useState(null);
  const [handoff,setHandoff]=useState(null);
  const [legalApproval,setLegalApproval]=useState(null);
- const [deliverySelection,setDeliverySelection]=useState(null);
+ const [deliverySelection,setDeliverySelection]=useWorkspaceState('deliverySelection',null);
  const [legalBusy,setLegalBusy]=useState(false);
  const [pdfBusy,setPdfBusy]=useState(false);
  const [pdfError,setPdfError]=useState('');
@@ -121,7 +137,7 @@ export default function VendorWorkflow(){
  const [loadingPhase,setLoadingPhase]=useState(null);
  const [loadingError,setLoadingError]=useState('');
  const [elapsed,setElapsed]=useState(0);
- const startedAt=useRef(0);
+ const startedAt=useRef(Date.now());
  const querySequence=useRef(0);
  const pollingBusy=useRef(false);
  useEffect(()=>{
@@ -164,7 +180,7 @@ export default function VendorWorkflow(){
   const query=number.trim();
   if(!/^[1-9]\d{0,11}$/.test(query)){setError('Informe um número de pedido válido.');return;}
   const seq=++querySequence.current;
-  setDeliverySelection(null);setOrder(null);setStatus(null);setRequest(null);setDraft(null);setReview(null);setCustomerLink('');setEvidence(null);setSignedPdf(null);setHandoff(null);setLinkError('');setPdfError('');setError('');setLoadingError('');
+  setPhone('');setDeliverySelection(null);setOrder(null);setStatus(null);setRequest(null);setDraft(null);setReview(null);setCustomerLink('');setEvidence(null);setSignedPdf(null);setHandoff(null);setLinkError('');setPdfError('');setError('');setLoadingError('');
   setElapsed(0);startedAt.current=Date.now();
   setLoadingPhase('enviando');setWorking(true);
   try{
@@ -258,6 +274,7 @@ export default function VendorWorkflow(){
    const n=String(order.pedidoCompleto.numero);
    const current=await apiGet('/.netlify/functions/vendor-acceptance-status?number='+encodeURIComponent(n));
    setStatus(current);
+   if(current.state!=='link_ativo')setCustomerLink('');
    if(current.orderId)setEvidence(await apiGet('/.netlify/functions/seller-acceptance-evidence?orderId='+encodeURIComponent(current.orderId)));
   }catch(e){setLinkError(e.message);}
   finally{setLinkBusy(false);}
@@ -306,15 +323,16 @@ export default function VendorWorkflow(){
      <SeletorEnderecoEntrega pedidoNumero={request?.requestId}
        opcoes={order.enderecosEntrega||order.pedidoCompleto.enderecosEntrega||[]}
        cadastral={order.enderecoCadastralEntrega||order.pedidoCompleto.enderecoCadastralEntrega||null}
-       disabled={linkBusy} onSelectionChange={setDeliverySelection}/>
+       initialSelection={deliverySelection} disabled={linkBusy} onSelectionChange={setDeliverySelection}/>
      <button disabled={linkBusy||!deliverySelection||!status} onClick={createAcceptance} className="bg-slate-900 text-white rounded px-4 py-3 disabled:opacity-50">{linkBusy?'Processando...':'Gerar link do cliente'}</button>
     </>}
     {status?.state==='pendente'&&status?.orderStatus==='aguardando_aceite_pedido'&&<button disabled={linkBusy} onClick={resumeLink} className="bg-slate-900 text-white rounded px-4 py-3 disabled:opacity-50">Gerar novo link do cliente</button>}
     {status?.state==='link_ativo'&&!customerLink&&<p className="text-sm">Já existe um link ativo. Utilize o link enviado anteriormente. Um novo link poderá ser emitido após o vencimento.</p>}
     <p><strong>Status:</strong> {simpleStatus[status?.state]||status?.state||'Consultando...'}</p>
-    {customerLink&&<div className="flex flex-wrap gap-2">
+    {customerLink&&status?.state==='link_ativo'&&Date.parse(status.latestLink?.expiresAt)>Date.now()&&<div className="flex flex-wrap gap-2">
      <button className="border rounded px-3 py-2" onClick={()=>navigator.clipboard.writeText(customerLink).catch(()=>setLinkError('Não foi possível copiar o link.'))}>Copiar link</button>
-     <button className="border rounded px-3 py-2" onClick={()=>window.open('https://wa.me/?text='+encodeURIComponent('Confira e assine seu pedido DRAFER: '+customerLink),'_blank','noopener,noreferrer')}>WhatsApp</button>
+     <label className="flex flex-col text-sm gap-1">WhatsApp do cliente (DDD + número)<input type="tel" autoComplete="off" className="border rounded px-3 py-2" placeholder="(18) 99999-9999" value={phone} maxLength={24} onChange={e=>setPhone(e.target.value)}/></label>
+     <button disabled={!whatsappNumber(phone)} className="border rounded px-3 py-2 disabled:opacity-50 self-end" onClick={()=>window.open('https://wa.me/'+whatsappNumber(phone)+'?text='+encodeURIComponent('Confira e assine seu pedido DRAFER: '+customerLink),'_blank','noopener,noreferrer')}>WhatsApp</button>
     </div>}
     <button disabled={linkBusy||!status?.orderId} onClick={verifyEvidence} className="border rounded px-4 py-2 disabled:opacity-50">Verificar assinatura</button>
     {evidence&&<p>{evidence.signed?(evidence.signatureIntegrity?'Assinatura verificada: '+field(evidence.signerName):'Integridade não confirmada'):'Aguardando assinatura'}</p>}
