@@ -9,7 +9,7 @@ const canonical=value=>JSON.stringify(value);
 exports.handler=async event=>{
  try{
   onlyMethod(event,'POST');
-  const {authUser}=await requireStaff(event,{allowedRoles:['admin','vendedor']});
+  const {authUser}=await requireStaff(event,{allowedRoles:['admin','vendedor','aprovador']});
   if(typeof event.body!=='string'||event.body.length>1024)throw invalid('Requisicao invalida',400);
   let input;try{input=JSON.parse(event.body)}catch{throw invalid('JSON invalido',400)}
   if(!UUID.test(input.orderId||'')||input.confirmed!==true)
