@@ -4,12 +4,6 @@ import { ShieldCheck, Loader2, MailCheck, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
 
-// A interface exibe somente os enderecos institucionais aprovados para a fase piloto.
-// A seguranca efetiva permanece em auth.users + aceite_members + backend requireStaff.
-const PILOT_EMAILS = new Set([
-  'heitor.lopes@grupodrafer.com',
-  'diretoria@grupodrafer.com',
-]);
 const normalizeEmail = value => String(value || '').trim().toLowerCase();
 
 export default function Login() {
@@ -48,8 +42,8 @@ export default function Login() {
     setError('');
     setSuccess('');
     const cleanEmail = normalizeEmail(email);
-    if (!PILOT_EMAILS.has(cleanEmail)) {
-      setError('O acesso institucional está em implantação e limitado às contas designadas.');
+    if (cleanEmail.endsWith('@gmail.com')) {
+      setError('Para contas Gmail, utilize Entrar com Google.');
       return;
     }
     setWorking(true);
@@ -115,7 +109,7 @@ export default function Login() {
         </div>
         {!supabase && (
           <p role="alert" className="text-red-700 bg-red-50 p-3 rounded mb-4">
-            Supabase não configurado. Verifique VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY no Netlify.
+            Supabase não configurado. Verifique VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY na hospedagem.
           </p>
         )}
         {error && <p role="alert" className="text-red-700 bg-red-50 p-3 rounded mb-4">{error}</p>}
@@ -125,7 +119,7 @@ export default function Login() {
           <section className="border border-slate-200 rounded-lg p-4 space-y-3">
             <h2 className="font-semibold text-slate-900">E-mail institucional</h2>
             <p className="text-xs text-slate-600">
-              Acesso piloto para os responsáveis designados. Não é necessário vincular uma conta Google.
+              Acesso para contas previamente cadastradas. Não é necessário vincular uma conta Google.
             </p>
             {!sentTo ? (
               <form onSubmit={handleSendCode} className="space-y-3">
