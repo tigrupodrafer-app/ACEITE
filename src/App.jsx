@@ -7,6 +7,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Login from '@/pages/Login';
 import PublicAcceptance from '@/pages/PublicAcceptance';
 import Dashboard from '@/pages/Dashboard';
+import {AcceptanceWorkspaceProvider} from '@/components/VendorWorkflowSimplificado';
 import Layout from '@/Layout';
 import AcceptancePresentation from '@/pages/AcceptancePresentation';
 import DemoLab from '@/pages/DemoLab';
@@ -65,7 +66,9 @@ function MigrationNotice() {
 }
 
 function AppRoutes() {
+  const {user,isAuthenticated}=useAuth();
   return (
+    <AcceptanceWorkspaceProvider key={isAuthenticated?user?.id:'anonymous'}>
     <Routes>
       <Route path="/Login" element={<Login />} />
       <Route path="/AssinarAceite" element={<PublicAcceptance />} />
@@ -76,6 +79,7 @@ function AppRoutes() {
       <Route path="/Dashboard" element={<PrivatePage><Dashboard /></PrivatePage>} />
       <Route path="*" element={<MigrationNotice />} />
     </Routes>
+    </AcceptanceWorkspaceProvider>
   );
 }
 
