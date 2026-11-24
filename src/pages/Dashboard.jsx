@@ -1,64 +1,40 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { apiGet } from '@/lib/apiClient';
-import StatsCards from '../components/dashboard/StatsCards.jsx';
-import OrdersTable from '../components/dashboard/OrdersTable.jsx';
-import VendorWorkflow from '@/components/VendorWorkflow';
+import React, {useState} from 'react';
+import {useAuth} from '@/lib/AuthContext';
+import {apiPost} from '@/lib/apiClient';
+import VendorWorkflow from '@/components/VendorWorkflowSimplificado';
+import legal from '@/lib/legalTermRevised.json';
 
-export default function Dashboard() {
-  const { data: orders = [], isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ['aceite-orders'],
-    queryFn: async () => {
-      const data = await apiGet('/.netlify/functions/orders?limit=100');
-      return data.orders || [];
-    },
-  });
-
-  const stats = {
-    total: orders.length,
-    fabricacao: orders.filter(o => o.status === 'em_fabricacao').length,
-    pendentes: orders.filter(o => ['aguardando_aceite_pedido', 'aguardando_aceite_entrega', 'aguardando_aceite_instalacao'].includes(o.status)).length,
-    concluidos: orders.filter(o => o.status === 'concluido').length,
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6 print:p-0 print:min-h-0 print:bg-white">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8 flex flex-wrap gap-4 justify-between items-center print:hidden">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900">ACEITE DRAFER</h1>
-            <p className="text-slate-600 mt-1">Consulta de pedidos e emissão de aceites — SIC SupraSYS</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
-            <RefreshCw className={isFetching ? 'w-4 h-4 mr-2 animate-spin' : 'w-4 h-4 mr-2'} /> Atualizar
-          </Button>
-          </div>
-        </div>
-        {isError && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 p-4 rounded mb-5">
-          Não foi possível carregar pedidos: {error?.message}
-        </div>}
-        <VendorWorkflow />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 print:hidden">
-          <StatsCards icon={FileText} title="Pedidos carregados" value={isLoading ? '—' : stats.total} color="text-blue-600" />
-          <StatsCards icon={Loader2} title="Em fabricação" value={isLoading ? '—' : stats.fabricacao} color="text-yellow-600" />
-          <StatsCards icon={AlertCircle} title="Aguardando aceite" value={isLoading ? '—' : stats.pendentes} color="text-red-600" />
-          <StatsCards icon={CheckCircle2} title="Concluídos" value={isLoading ? '—' : stats.concluidos} color="text-green-600" />
-        </div>
-        <p className="text-xs text-slate-500 mb-4 print:hidden">
-          Exibindo até 100 pedidos da base Supabase. O cadastro e a visualização detalhada ainda estão em migração.
-        </p>
-        <Card className="shadow-lg print:hidden">
-          <CardHeader className="border-b bg-slate-50"><CardTitle>Pedidos registrados</CardTitle></CardHeader>
-          <CardContent className="p-0">
-            {isError ? <p className="p-6">Pedidos indisponíveis.</p> :
-              <OrdersTable orders={orders} isLoading={isLoading} readOnly />}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+function LegalAdministration(){
+ const [justification,setJustification]=useState('');
+ const [busy,setBusy]=useState(false);
+ const [message,setMessage]=useState('');
+ async function approve(){
+  if(busy||justification.trim().length<30||!window.confirm('Confirma a homologação jurídica desta versão para todos os pedidos?'))return;
+  setBusy(true);setMessage('');
+  try{
+   const r=await apiPost('/.netlify/functions/approve-legal-version',{confirmed:true,version:legal.version,justification:justification.trim()});
+   setMessage(r.approved?'Homologação registrada.':'Homologação não confirmada.');
+  }catch(e){setMessage(e.message);}
+  finally{setBusy(false);}
+ }
+ return <details className="mt-8 border rounded-lg bg-white p-4">
+  <summary className="font-semibold cursor-pointer">Administração — homologação jurídica</summary>
+  <div className="space-y-3 mt-4">
+   <p>Versão {legal.version}. Homologação única por versão, mediante autorização jurídica.</p>
+   <details><summary>Consultar termo jurídico</summary>{legal.sections.map(([title,paragraphs],i)=><section key={i} className="mt-3"><h3 className="font-semibold">{i+1}. {title}</h3>{paragraphs.map((p,j)=><p key={j}>{p}</p>)}</section>)}{legal.consent.map((p,i)=><p key={i} className="mt-2">{p}</p>)}</details>
+   <textarea className="w-full border rounded p-2" aria-label="Fundamentação da homologação" placeholder="Informe a autorização jurídica e sua fundamentação" value={justification} maxLength={1000} onChange={e=>setJustification(e.target.value)}/>
+   <button disabled={busy||justification.trim().length<30} onClick={approve} className="border rounded px-4 py-2 disabled:opacity-50">Registrar homologação</button>
+   {message&&<p role="status">{message}</p>}
+  </div>
+ </details>;
+}
+export default function Dashboard(){
+ const {user}=useAuth();
+ return <main className="min-h-screen bg-slate-50 p-4 sm:p-6">
+  <div className="max-w-5xl mx-auto">
+   <header className="mb-6"><h1 className="text-3xl font-bold text-slate-900">ACEITE DRAFER</h1><p className="text-slate-600">Consulte, confirme e envie o pedido para assinatura.</p></header>
+   <VendorWorkflow/>
+   {['admin','aprovador'].includes(user?.role)&&<LegalAdministration/>}
+  </div>
+ </main>;
 }
