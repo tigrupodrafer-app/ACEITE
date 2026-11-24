@@ -113,7 +113,9 @@ const whatsappNumber=value=>{
  return /^[1-9][0-9][2-9][0-9]{7,8}$/.test(digits)?'55'+digits:
  /^55[1-9][0-9][2-9][0-9]{7,8}$/.test(digits)?digits:'';
 };
-export default function VendorWorkflow(){
+export default function VendorWorkflow({initialNumber='',resetOnMount=false}){
+ const {setWorkspace}=useContext(WorkspaceContext);
+ useEffect(()=>{if(resetOnMount)setWorkspace({number:initialNumber});},[]);
  const [number,setNumber]=useWorkspaceState('number','');
  const [request,setRequest]=useWorkspaceState('request',null);
  const [order,setOrder]=useWorkspaceState('order',null);
