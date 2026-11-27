@@ -14,7 +14,7 @@ const date=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getT
 const printCode=item=>item.codigoProdutoImpressao??item.codigoImpressao;
 const internalCode=item=>item.codigoProdutoInterno??item.codigoProduto;
 const simpleStatus={nao_registrado:'Aceite ainda não gerado',rascunho:'Pedido em rascunho',link_ativo:'Aguardando assinatura',assinado:'Aceite assinado',pendente:'Pendente'};
-function ItemTable({items}){
+function ItemTable({items,isV2}){
  return <div>
   <div className="sm:hidden space-y-3 print:hidden" aria-label="Itens do pedido para celular">
    {items.map((item,i)=><article key={i} className="border rounded-md p-3 space-y-2 text-sm">
@@ -26,7 +26,7 @@ function ItemTable({items}){
      <p><strong>Qtde. KG:</strong> {num(itemWeight(item))}</p>
      <p><strong>Qtde. PC:</strong> {num(item.quantidadePecas)}</p>
      <p><strong>Vr. unitário:</strong> {num(item.valorUnitarioPeca??item.valorUnitario)}</p>
-     <p><strong>Total:</strong> R$ {brl(item.valorTotal)}</p>
+     <p><strong>Total:</strong> R$ {brl(isV2?item.valorTotalEfetivo:item.valorTotal)}</p>
     </div>
    </article>)}
   </div>
@@ -40,12 +40,12 @@ function ItemTable({items}){
     <td className="p-1 text-right">{num(itemWeight(item))}</td>
     <td className="p-1 text-right">{num(item.quantidadePecas)}</td>
     <td className="p-1 text-right">{num(item.valorUnitarioPeca??item.valorUnitario)}</td>
-    <td className="p-1 text-right">{brl(item.valorTotal)}</td>
+    <td className="p-1 text-right">{brl(isV2?item.valorTotalEfetivo:item.valorTotal)}</td>
   </tr>)}</tbody>
  </table></div></div>;
 }
 function LabelValue({label,value}){return <div className="min-w-0"><strong>{label}:</strong> {field(value)}</div>}
-function PrintedOrder({order,items}){
+function PrintedOrder({order,items,isV2}){
  const c=order.cliente||{}, totals=order.valores||{},summary=totalsForPrint(items);
  const seller=order.vendedor||order.codigoVendedor;
  const payment=order.condicaoPagamento||order.condicoesPagamento;
@@ -71,14 +71,14 @@ function PrintedOrder({order,items}){
    <LabelValue label="Local de Entrega" value={order.localEntrega||order.enderecoEntrega}/>
    <LabelValue label="Obs" value={order.observacoes||order.obs}/>
   </div>
-  <div className="p-2 pt-5 sm:pt-20 min-h-[220px] sm:min-h-[360px] print:pt-4 print:min-h-0"><ItemTable items={items}/></div>
+  <div className="p-2 pt-5 sm:pt-20 min-h-[220px] sm:min-h-[360px] print:pt-4 print:min-h-0"><ItemTable items={items} isV2={isV2}/></div>
   <div className="border-t-2 border-black px-2 py-2 grid grid-cols-2 md:grid-cols-6 gap-1 text-[12px] sm:text-sm">
    <span><b>Tot. Qtde:</b> {summary.quantityGroups.length?summary.quantityGroups.map(g=>num(g.quantity,2)+' '+g.unit).join(' + '):'—'}</span>
    <span><b>Tot. Qtde KG:</b> {summary.weightKg===null?'—':num(summary.weightKg)+' KG'}</span>
    <span><b>Frete:</b> {brl(totals.frete??order.frete)}</span>
    <span><b>Itens:</b> {brl(totals.subtotal)}</span>
    <span><b>Desconto:</b> {brl(totals.desconto)}</span>
-   <span><b>Total Venda:</b> {brl(totals.total)}</span>
+   <span><b>Total Venda:</b> {brl(isV2?totals.totalEfetivo:totals.total)}</span>
   </div>
   <div className="border-t border-black px-2 py-2 text-sm">Não executamos serviços, apenas venda de mercadorias. De Acordo: Data____/____/______ RG____________ Ass.:_________________</div>
  </article>;
@@ -321,7 +321,7 @@ export default function VendorWorkflow({initialNumber='',resetOnMount=false}){
   {order&&<div className="space-y-4">
    <details className="border rounded-lg bg-white p-4">
     <summary className="font-semibold cursor-pointer">Pedido {order.pedidoCompleto.numero} — R$ {brl(order.pedidoCompleto.valores?.total)}</summary>
-    <div className="mt-3"><PrintedOrder order={order.pedidoCompleto} items={items}/></div>
+    <div className="mt-3"><PrintedOrder order={order.pedidoCompleto} items={items} isV2={order.validacao?.financeiroV2===true}/></div>
    </details>
    <div className="bg-white border rounded-lg p-4 space-y-3">
     {(!status?.found||status?.state==='rascunho')&&status?.state!=='indisponivel'&&<>
