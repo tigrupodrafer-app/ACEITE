@@ -19,7 +19,7 @@ export async function exportAcceptanceDraft({ pedido, itens, validacao }) {
   const normalize = (v) => String(v ?? 'Nao informado')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[\r\n\t]/g, ' ').slice(0, 350);
-  const brl = (v) => Number.isFinite(Number(v))
+  const brl = (v) => (typeof v === 'number' || typeof v === 'string') && String(v).trim() !== '' && Number.isFinite(Number(v))
     ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v))
     : 'Nao informado';
 
@@ -60,6 +60,7 @@ export async function exportAcceptanceDraft({ pedido, itens, validacao }) {
     y += after;
   }
 
+  const isV2 = validacao.financeiroV2 === true;
   pageHeader();
   paragraph('ACEITE DRAFER - TERMO DE ACEITE DE PEDIDO E AUTORIZACAO DE FABRICACAO', { size: 13, bold: true });
   paragraph('Versao preliminar para conferencia interna - sem validade como instrumento de aceite.', { bold: true });
@@ -81,6 +82,7 @@ export async function exportAcceptanceDraft({ pedido, itens, validacao }) {
       ' | Unidade retornada: ' + normalize(item.unidade));
     paragraph('Valor unitario retornado: ' + brl(item.valorUnitario) +
       ' (base de medida a confirmar no SIC) | Total: ' + brl(item.valorTotal));
+    if (isV2) paragraph('Total efetivo do item: ' + brl(item.valorTotalEfetivo));
     if (item.referenciaFornecedor != null) paragraph('Referencia do fornecedor: ' + normalize(item.referenciaFornecedor));
     if (item.pesoLiquidoKg != null) paragraph('Peso liquido (ARQES15.PESO_LIQUIDO): ' + normalize(item.pesoLiquidoKg) + ' kg');
     if (item.pesoBrutoKg != null) paragraph('Peso bruto (ARQES15.PESO_BRUTO): ' + normalize(item.pesoBrutoKg) + ' kg');
@@ -89,7 +91,7 @@ export async function exportAcceptanceDraft({ pedido, itens, validacao }) {
   });
   paragraph('Subtotal: ' + brl(pedido.valores?.subtotal));
   paragraph('Desconto: ' + brl(pedido.valores?.desconto));
-  paragraph('Total: ' + brl(pedido.valores?.total), { bold: true });
+  paragraph('Total: ' + brl(isV2 ? pedido.valores?.totalEfetivo : pedido.valores?.total), { bold: true });
   paragraph('Conferencia aritmetica da API SIC: ' +
     (validacao.valido === true ? 'APROVADA' : 'NAO APROVADA'));
 
