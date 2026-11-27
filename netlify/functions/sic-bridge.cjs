@@ -1,6 +1,7 @@
 'use strict';
 const crypto = require('node:crypto');
 const { respond, supabaseFetch, handleError } = require('./_lib/backend.cjs');
+const { validateV2 } = require('./_lib/sic-v2-validation.cjs');
 const BASE = '/rest/v1/aceite_sic_requests';
 
 function err(msg, code) { return Object.assign(new Error(msg), { statusCode: code }); }
@@ -83,6 +84,15 @@ exports.handler = async (event) => {
     if (ok && (!data || typeof data !== 'object' || Array.isArray(data) ||
       !data.pedidoCompleto || !Array.isArray(data.itens) || !data.validacao)) {
       throw err('Formato do resultado SIC não validado', 422);
+    }
+
+    if (ok) {
+      if (String(data.pedidoCompleto.numero) !== String(pending[0].order_number) || data.itens.length > 200 ||
+          (Array.isArray(data.enderecosEntrega) && data.enderecosEntrega.length > 100)) {
+        throw err('Resultado SIC inconsistente ou acima do limite', 422);
+      }
+      const isV2 = data.validacao.financeiroV2 !== undefined || data.pedidoCompleto.enderecoEntregaResolucao !== undefined;
+      if (isV2) validateV2(data, pending[0].order_number);
     }
 
     const body = ok
