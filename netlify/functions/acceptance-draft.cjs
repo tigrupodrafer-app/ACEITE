@@ -3,6 +3,7 @@
 // Only prepares a private, non-signable draft from an existing authenticated SIC job.
 // NO legal acceptance, no token, no client link and no automatic production authorization.
 const { respond, requireStaff, supabaseFetch, onlyMethod, handleError } = require('./_lib/backend.cjs');
+const { validateV2 } = require('./_lib/sic-v2-validation.cjs');
 const REQUESTS = '/rest/v1/aceite_sic_requests';
 const ORDERS = '/rest/v1/aceite_orders';
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -52,11 +53,13 @@ exports.handler = async (event) => {
     // Compare like-for-like amounts: item sum -> subtotal -> net total.
     // Monetary checks use integer cents to avoid binary floating point rounding.
     const cents = value => Math.round(value * 100);
-    const financialsValid = [total, calculated, subtotal, discount, freight].every(Number.isFinite) &&
+    const isV2 = validacao?.financeiroV2 !== undefined || pedido?.enderecoEntregaResolucao !== undefined;
+    if (isV2) validateV2(query.result, query.order_number);
+    const financialsValid = isV2 || ( [total, calculated, subtotal, discount, freight].every(Number.isFinite) &&
       subtotal >= 0 && discount >= 0 && freight >= 0 &&
       discount <= subtotal &&
       Math.abs(cents(calculated) - cents(subtotal)) <= 2 &&
-      Math.abs(cents(total) - (cents(subtotal) - cents(discount) + cents(freight))) <= 2;
+      Math.abs(cents(total) - (cents(subtotal) - cents(discount) + cents(freight))) <= 2);
     if (!pedido || !Array.isArray(itens) || !itens.length || itens.length > 200 ||
         !Number.isSafeInteger(orderNumber) || !Number.isSafeInteger(company) || company <= 0 ||
         num(pedido.numero) !== orderNumber ||
@@ -68,6 +71,8 @@ exports.handler = async (event) => {
       throw invalid('Dados do SIC insuficientes para registrar um rascunho. Revise o pedido.', 422);
     }
     // No assumption about SITU/FATURADO or approval to manufacture.
+    // V2 remains private until all link issuance and activation paths enforce its policy.
+    if (isV2) throw invalid('Espelho V2 em homologação. Registro de termo ainda não liberado.', 409);
     const existing = await findExisting(company, orderNumber);
     if (existing) {
       if (existing.status !== 'rascunho') return respond(200, {
